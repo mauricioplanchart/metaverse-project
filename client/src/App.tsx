@@ -471,3 +471,4 @@ const App: React.FC = () => {
 export default App
 // Updated for deployment
 // Trigger redeployment with environment variables
+// Trigger Vercel deployment - Sat Jul 12 11:47:38 CST 2025
