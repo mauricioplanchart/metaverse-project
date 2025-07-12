@@ -470,3 +470,4 @@ const App: React.FC = () => {
 
 export default App
 // Updated for deployment
+// Trigger redeployment with environment variables
