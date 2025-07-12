@@ -1,0 +1,16 @@
+{
+  "name": "metaverse-project",
+  "version": "1.0.0",
+  "description": "Interactive Metaverse with Babylon.js and React",
+  "scripts": {
+    "dev": "bash start-dev.sh",
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && npm run dev",
+    "install:all": "npm install && cd client && npm install && cd ../server && npm install",
+    "build": "cd client && npm run build && cd ../server && npm run build",
+    "start": "cd server && npm start"
+  },
+  "keywords": ["metaverse", "babylonjs", "react", "multiplayer"],
+  "author": "",
+  "license": "ISC"
+} 
