@@ -19,15 +19,29 @@ class SocketService {
           PROD: import.meta.env.PROD,
           NODE_ENV: import.meta.env.NODE_ENV
         });
-        this.socket = io(this.serverUrl, config.socketOptions)
+        
+        // Try simpler connection first
+        console.log('🔌 Attempting simple connection...');
+        this.socket = io(this.serverUrl, {
+          transports: ['polling', 'websocket'],
+          timeout: 30000,
+          forceNew: true
+        });
 
         this.socket.on('connect', () => {
           console.log('✅ Connected to server')
+          console.log('🔧 Socket ID:', this.socket?.id)
+          console.log('🔧 Socket connected state:', this.socket?.connected)
           resolve()
         })
 
         this.socket.on('connect_error', (error) => {
           console.error('❌ Connection error:', error)
+          console.error('❌ Error details:', {
+            message: error.message,
+            name: error.name,
+            stack: error.stack
+          })
           reject(error)
         })
 
@@ -35,8 +49,34 @@ class SocketService {
           console.log('❌ Disconnected:', reason)
         })
 
+        this.socket.on('error', (error) => {
+          console.error('❌ Socket error:', error)
+          reject(error)
+        })
+
+        // Add more debugging events
+        this.socket.on('connecting', () => {
+          console.log('🔄 Connecting...')
+        })
+
+        this.socket.on('reconnect', (attemptNumber) => {
+          console.log('🔄 Reconnected after', attemptNumber, 'attempts')
+        })
+
+        this.socket.on('reconnect_attempt', (attemptNumber) => {
+          console.log('🔄 Reconnection attempt', attemptNumber)
+        })
+
+        this.socket.on('reconnect_error', (error) => {
+          console.error('❌ Reconnection error:', error)
+        })
+
+        this.socket.on('reconnect_failed', () => {
+          console.error('❌ Reconnection failed')
+        })
 
       } catch (error) {
+        console.error('❌ Socket creation error:', error)
         reject(error)
       }
     })

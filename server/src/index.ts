@@ -19,7 +19,8 @@ const io = new Server(server, {
       "http://localhost:5174", 
       "http://localhost:3000",
       "https://metaverse-project-1.netlify.app",
-      "https://metaverse-project-1.onrender.com"
+      "https://metaverse-project-1.onrender.com",
+      "https://mverse9.netlify.app"
     ],
     methods: ["GET", "POST"],
     credentials: true

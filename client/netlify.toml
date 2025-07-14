@@ -1,0 +1,23 @@
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+[build.environment]
+  VITE_SERVER_URL = "https://metaverse-project-1.onrender.com"
+  VITE_APP_NAME = "Metaverse"
+  VITE_APP_VERSION = "1.0.0"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[context.production.environment]
+  VITE_SERVER_URL = "https://metaverse-project-1.onrender.com"
+  VITE_APP_NAME = "Metaverse"
+  VITE_APP_VERSION = "1.0.0"
+
+[context.deploy-preview.environment]
+  VITE_SERVER_URL = "https://metaverse-project-1.onrender.com"
+  VITE_APP_NAME = "Metaverse (Preview)"
+  VITE_APP_VERSION = "1.0.0" 

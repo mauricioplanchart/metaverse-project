@@ -26,21 +26,28 @@ export const getServerUrl = () => {
     VITE_SERVER_URL: import.meta.env.VITE_SERVER_URL,
     DEV: import.meta.env.DEV,
     PROD: import.meta.env.PROD,
-    NODE_ENV: import.meta.env.NODE_ENV
+    NODE_ENV: import.meta.env.NODE_ENV,
+    location: window.location.hostname
   });
   
-  // In production (Netlify), always use the environment variable
-  if (import.meta.env.PROD) {
-    if (import.meta.env.VITE_SERVER_URL) {
-      console.log('🌐 Production: Using environment URL:', import.meta.env.VITE_SERVER_URL);
-      return import.meta.env.VITE_SERVER_URL;
-    } else {
-      console.log('🌐 Production: No VITE_SERVER_URL set, using default production URL');
-      return 'https://metaverse-project-1.onrender.com';
-    }
+  // Check if we're on Netlify (production domain)
+  const isNetlify = window.location.hostname.includes('netlify.app') || 
+                   window.location.hostname.includes('metaverse-project') ||
+                   import.meta.env.PROD;
+  
+  // If we have an environment variable, use it
+  if (import.meta.env.VITE_SERVER_URL) {
+    console.log('🌐 Using environment URL:', import.meta.env.VITE_SERVER_URL);
+    return import.meta.env.VITE_SERVER_URL;
   }
   
-  // In development, force localhost
-  console.log('🏠 Development: FORCED localhost URL: http://localhost:3001');
+  // If we're on Netlify or production, use the production backend
+  if (isNetlify) {
+    console.log('🌐 Production/Netlify: Using production backend URL');
+    return 'https://metaverse-project-1.onrender.com';
+  }
+  
+  // In development, use localhost
+  console.log('🏠 Development: Using localhost URL');
   return 'http://localhost:3001';
 }; 

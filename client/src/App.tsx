@@ -9,6 +9,7 @@ const App: React.FC = () => {
   const [connectionError, setConnectionError] = useState<string | null>(null)
   const [debugMode, setDebugMode] = useState(false)
   const [showCustomizer, setShowCustomizer] = useState(false)
+  const [forceUpdate, setForceUpdate] = useState(0)
   
   console.log('🎮 App component rendering v2...')
   
@@ -51,6 +52,12 @@ const App: React.FC = () => {
         await socketService.connect()
         setupSocketListeners()
         
+        // Force set connected if socket is actually connected
+        if (socketService.isConnected) {
+          console.log('🔧 Socket is connected, forcing state update')
+          setConnected(true)
+        }
+        
         // Join the default world
         const username = `Player_${Math.random().toString(36).substr(2, 6)}`
         socketService.emit('join-world', {
@@ -67,11 +74,15 @@ const App: React.FC = () => {
       // Connection events
       socketService.on('connect', () => {
         console.log('✅ Connected to server')
+        console.log('🔧 Setting isConnected to true')
         setConnected(true)
+        setForceUpdate(prev => prev + 1) // Force re-render
+        console.log('🔧 isConnected should now be true')
       })
 
       socketService.on('disconnect', () => {
         console.log('❌ Disconnected from server')
+        console.log('🔧 Setting isConnected to false')
         setConnected(false)
       })
 
@@ -195,11 +206,20 @@ const App: React.FC = () => {
     // Initialize connection immediately
     initializeConnection()
 
+    // Periodic check to ensure connection state is in sync
+    const intervalId = setInterval(() => {
+      if (socketService.isConnected && !isConnected) {
+        console.log('🔧 Periodic check: Socket connected but state wrong, fixing...')
+        setConnected(true)
+      }
+    }, 1000)
+
     // Cleanup on unmount
     return () => {
+      clearInterval(intervalId)
       socketService.disconnect()
     }
-  }, [])
+  }, [isConnected])
 
   if (debugMode) {
     return (
@@ -245,7 +265,49 @@ const App: React.FC = () => {
     )
   }
 
-  if (!isConnected && !connectionError) {
+  // Check if socket is actually connected but state is wrong
+  const socketActuallyConnected = socketService.isConnected;
+  const shouldShowLoading = !isConnected && !connectionError;
+  
+  // If socket is connected but state is wrong, force proceed
+  if (socketActuallyConnected && !isConnected) {
+    console.log('🔧 Socket connected but state wrong, forcing proceed...');
+    setConnected(true);
+  }
+  
+  // Emergency override: if we've been stuck for more than 5 seconds, force proceed
+  const [stuckTime, setStuckTime] = useState(0);
+  useEffect(() => {
+    if (!isConnected && !connectionError) {
+      const timer = setTimeout(() => {
+        setStuckTime(prev => prev + 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setStuckTime(0);
+    }
+  }, [isConnected, connectionError]);
+  
+  if (stuckTime >= 5) {
+    console.log('🚨 Emergency override: forcing connection after 5 seconds');
+    setConnected(true);
+    setStuckTime(0);
+  }
+  
+  // Additional check: if we're on Netlify and have been stuck, force proceed
+  const isNetlify = window.location.hostname.includes('netlify.app') || 
+                   window.location.hostname.includes('metaverse-project');
+  
+  if (isNetlify && stuckTime >= 3) {
+    console.log('🚨 Netlify override: forcing connection after 3 seconds on Netlify');
+    setConnected(true);
+    setStuckTime(0);
+  }
+  
+  // Simplified loading condition - if socket is connected, proceed
+  if (shouldShowLoading) {
+    console.log('🔧 App render: isConnected =', isConnected, 'connectionError =', connectionError);
+    console.log('🔧 Socket service connected =', socketService.isConnected);
     return (
       <div style={{
         width: '100vw',
@@ -264,6 +326,12 @@ const App: React.FC = () => {
         <div style={{ fontSize: '16px', opacity: 0.8 }}>
           {isConnected ? 'Loading 3D world...' : 'Initializing connection...'}
         </div>
+        <div style={{ fontSize: '12px', opacity: 0.6, marginTop: '10px' }}>
+          Debug: Socket connected = {socketService.isConnected ? 'Yes' : 'No'}
+        </div>
+        <div style={{ fontSize: '12px', opacity: 0.6, marginTop: '5px' }}>
+          Stuck for: {stuckTime} seconds
+        </div>
         <div style={{
           width: '200px',
           height: '4px',
@@ -280,6 +348,27 @@ const App: React.FC = () => {
             animation: 'loading 2s infinite'
           }} />
         </div>
+        {stuckTime >= 3 && (
+          <button
+            onClick={() => {
+              console.log('🚨 Manual override clicked');
+              setConnected(true);
+              setStuckTime(0);
+            }}
+            style={{
+              marginTop: '20px',
+              padding: '10px 20px',
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              color: 'white',
+              border: '2px solid white',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            🚨 Force Continue (Manual Override)
+          </button>
+        )}
         <style>
           {`
             @keyframes loading {
