@@ -1,105 +1,57 @@
 import React, { useEffect, useRef, useState } from 'react';
 import * as BABYLON from '@babylonjs/core';
-// import { useMetaverseStore } from '../stores/useMetaverseStore';
+import { useMetaverseStore } from '../stores/useMetaverseStore';
 import { socketService } from '../lib/socketService';
 
-// Simple avatar creation function
-const createSimpleAvatar = (scene: BABYLON.Scene, position: BABYLON.Vector3, name: string, color: string) => {
-  // Create avatar group
-  const avatarGroup = new BABYLON.TransformNode(name, scene);
-  
-  // Body (cylinder)
-  const body = BABYLON.MeshBuilder.CreateCylinder(`${name}_body`, { height: 1.5, diameter: 0.5 }, scene);
-  body.position = new BABYLON.Vector3(0, 0.75, 0);
-  body.material = new BABYLON.StandardMaterial(`${name}_body_mat`, scene);
-  (body.material as BABYLON.StandardMaterial).diffuseColor = BABYLON.Color3.FromHexString(color);
-  body.parent = avatarGroup;
-  
-  // Head (sphere)
-  const head = BABYLON.MeshBuilder.CreateSphere(`${name}_head`, { diameter: 0.4 }, scene);
-  head.position = new BABYLON.Vector3(0, 1.6, 0);
-  head.material = new BABYLON.StandardMaterial(`${name}_head_mat`, scene);
-  (head.material as BABYLON.StandardMaterial).diffuseColor = BABYLON.Color3.FromHexString('#ffcc99');
-  head.parent = avatarGroup;
-  
-  // Eyes
-  const leftEye = BABYLON.MeshBuilder.CreateSphere(`${name}_left_eye`, { diameter: 0.05 }, scene);
-  leftEye.position = new BABYLON.Vector3(-0.1, 1.65, 0.15);
-  leftEye.material = new BABYLON.StandardMaterial(`${name}_eye_mat`, scene);
-  (leftEye.material as BABYLON.StandardMaterial).diffuseColor = BABYLON.Color3.Black();
-  leftEye.parent = avatarGroup;
-  
-  const rightEye = BABYLON.MeshBuilder.CreateSphere(`${name}_right_eye`, { diameter: 0.05 }, scene);
-  rightEye.position = new BABYLON.Vector3(0.1, 1.65, 0.15);
-  rightEye.material = new BABYLON.StandardMaterial(`${name}_eye_mat2`, scene);
-  (rightEye.material as BABYLON.StandardMaterial).diffuseColor = BABYLON.Color3.Black();
-  rightEye.parent = avatarGroup;
-  
-  // Simple name label (without GUI)
-  const namePlane = BABYLON.MeshBuilder.CreatePlane(`${name}_label`, { width: 2, height: 0.5 }, scene);
-  namePlane.position = new BABYLON.Vector3(0, 2.2, 0);
-  namePlane.billboardMode = BABYLON.Mesh.BILLBOARDMODE_ALL;
-  
-  const nameMaterial = new BABYLON.StandardMaterial(`${name}_label_mat`, scene);
-  nameMaterial.diffuseColor = BABYLON.Color3.White();
-  nameMaterial.emissiveColor = BABYLON.Color3.Black();
-  namePlane.material = nameMaterial;
-  namePlane.parent = avatarGroup;
-  
-  // Position the entire avatar
-  avatarGroup.position = position;
-  
-  return avatarGroup;
-};
-
-export const BabylonSceneMultiplayer: React.FC = () => {
+const BabylonSceneMultiplayer: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<BABYLON.Engine | null>(null);
   const sceneRef = useRef<BABYLON.Scene | null>(null);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const { isConnected, setConnected, isLoaded, setIsLoaded } = useMetaverseStore();
+  const [loadingMessage, setLoadingMessage] = useState('🌍 Connecting to Metaverse...');
   const [error, setError] = useState<string | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState('Connecting...');
-  
-  // const { avatarCustomization } = useMetaverseStore();
 
-  // Emergency timeout to prevent infinite loading
-  useEffect(() => {
-    const emergencyTimeout = setTimeout(() => {
-      console.log('🚨 Emergency timeout - forcing load completion');
-      setIsLoaded(true);
-      setError(null);
-    }, 5000);
-
-    return () => clearTimeout(emergencyTimeout);
-  }, []);
-
-  // Connect to server
+  // Connection management
   useEffect(() => {
     console.log('🔌 Attempting to connect to server...');
     
-    const connectToServer = async () => {
-      try {
-        await socketService.connect();
-        setConnectionStatus('Connected');
-        console.log('✅ Connected to server');
-      } catch (err) {
-        console.error('❌ Failed to connect to server:', err);
-        setConnectionStatus('Connection failed');
-        setError('Failed to connect to server');
-      }
+    const handleConnect = () => {
+      console.log('✅ Connected to server');
+      setConnected(true);
+      setLoadingMessage('Initializing world building systems');
     };
 
-    connectToServer();
+    const handleDisconnect = () => {
+      console.log('🔌 Disconnecting from multiplayer server...');
+      setConnected(false);
+      setLoadingMessage('🌍 Reconnecting to Metaverse...');
+    };
+
+    const handleError = (error: any) => {
+      console.error('❌ Connection error:', error);
+      setError('Failed to connect to server');
+      setIsLoaded(true); // Show error screen
+    };
+
+    // Connect to server
+    socketService.connect();
+
+    // Listen for connection events
+    socketService.on('connect', handleConnect);
+    socketService.on('disconnect', handleDisconnect);
+    socketService.on('connect_error', handleError);
 
     return () => {
+      socketService.off('connect', handleConnect);
+      socketService.off('disconnect', handleDisconnect);
+      socketService.off('connect_error', handleError);
       socketService.disconnect();
     };
-  }, []);
+  }, [setConnected, setIsLoaded]);
 
   // Initialize Babylon.js scene
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current || !isConnected) return;
 
     console.log('🎮 Starting simplified multiplayer Babylon scene...');
 
@@ -107,12 +59,10 @@ export const BabylonSceneMultiplayer: React.FC = () => {
       // Create engine
       const engine = new BABYLON.Engine(canvasRef.current, true);
       engineRef.current = engine;
-      console.log('✅ Engine and scene created');
 
       // Create scene
       const scene = new BABYLON.Scene(engine);
       sceneRef.current = scene;
-      console.log('✅ Camera created and attached');
 
       // Create camera
       const camera = new BABYLON.ArcRotateCamera(
@@ -124,75 +74,30 @@ export const BabylonSceneMultiplayer: React.FC = () => {
         scene
       );
       camera.attachControl(canvasRef.current, true);
-      camera.lowerRadiusLimit = 2;
-      camera.upperRadiusLimit = 20;
-      console.log('✅ Camera created and attached');
 
-      // Create lighting
+      // Create light
       const light = new BABYLON.HemisphericLight(
         'light',
         new BABYLON.Vector3(0, 1, 0),
         scene
       );
-      light.intensity = 0.7;
-      console.log('✅ Lighting created');
 
       // Create ground
-      const ground = BABYLON.MeshBuilder.CreateGround(
-        'ground',
-        { width: 20, height: 20 },
-        scene
-      );
-      const groundMaterial = new BABYLON.StandardMaterial('groundMat', scene);
-      groundMaterial.diffuseColor = BABYLON.Color3.FromHexString('#4CAF50');
-      ground.material = groundMaterial;
-      console.log('✅ Ground created');
+      const ground = BABYLON.MeshBuilder.CreateGround('ground', {
+        width: 20,
+        height: 20
+      }, scene);
 
-      // Create a rotating box
-      const box = BABYLON.MeshBuilder.CreateBox('box', { size: 1 }, scene);
-      box.position = new BABYLON.Vector3(0, 0.5, 0);
-      const boxMaterial = new BABYLON.StandardMaterial('boxMat', scene);
-      boxMaterial.diffuseColor = BABYLON.Color3.FromHexString('#2196F3');
-      box.material = boxMaterial;
-      
-      // Add rotation animation
-      const rotationAnimation = new BABYLON.Animation(
-        'rotation',
-        'rotation.y',
-        30,
-        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-        BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
-      );
-      const keyFrames = [];
-      keyFrames.push({ frame: 0, value: 0 });
-      keyFrames.push({ frame: 60, value: Math.PI * 2 });
-      rotationAnimation.setKeys(keyFrames);
-      box.animations = [rotationAnimation];
-      scene.beginAnimation(box, 0, 60, true);
-      console.log('✅ Rotating box created');
-
-      // Create simple avatars (simplified to avoid issues)
-      try {
-        const avatars = [
-          { name: 'You', color: '#FF5722', position: new BABYLON.Vector3(0, 0, 2) },
-          { name: 'Alice', color: '#9C27B0', position: new BABYLON.Vector3(3, 0, 0) },
-          { name: 'Bob', color: '#3F51B5', position: new BABYLON.Vector3(-3, 0, 0) },
-          { name: 'Charlie', color: '#4CAF50', position: new BABYLON.Vector3(0, 0, -2) }
-        ];
-
-        avatars.forEach(avatar => {
-          createSimpleAvatar(scene, avatar.position, avatar.name, avatar.color);
-        });
-        console.log('✅ Avatars created');
-      } catch (avatarError) {
-        console.warn('⚠️ Avatar creation failed, continuing without avatars:', avatarError);
-      }
+      // Create a simple box
+      const box = BABYLON.MeshBuilder.CreateBox('box', {
+        size: 1
+      }, scene);
+      box.position.y = 0.5;
 
       // Start render loop
       engine.runRenderLoop(() => {
         scene.render();
       });
-      console.log('✅ Render loop started');
 
       // Handle window resize
       const handleResize = () => {
@@ -200,80 +105,71 @@ export const BabylonSceneMultiplayer: React.FC = () => {
       };
       window.addEventListener('resize', handleResize);
 
-      // Mark as initialized and loaded
-      setIsInitialized(true);
-      setIsLoaded(true);
-      setError(null);
-      console.log('🎉 Scene initialization complete!');
+      // Set loaded state after a short delay to show the scene
+      setTimeout(() => {
+        console.log('✅ Scene loaded successfully');
+        setIsLoaded(true);
+      }, 1000);
 
-      // Cleanup function
       return () => {
         window.removeEventListener('resize', handleResize);
-        scene.dispose();
         engine.dispose();
-        console.log('✅ Resources cleaned up successfully');
       };
     } catch (err) {
-      console.error('❌ Scene initialization failed:', err);
+      console.error('❌ Error initializing scene:', err);
       setError('Failed to initialize 3D scene');
-      setIsLoaded(true); // Force loading to complete even on error
+      setIsLoaded(true); // Show error screen
     }
-  }, []);
+  }, [isConnected, setIsLoaded]);
 
-  // Loading screen
+  // Show loading screen
   if (!isLoaded) {
     return (
       <div className="fixed inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
         <div className="text-center text-white">
           <div className="text-6xl mb-4">🌍</div>
-          <div className="text-2xl font-bold mb-2">Connecting to Metaverse...</div>
-          <div className="text-lg text-blue-200">Initializing world building systems</div>
-          <div className="mt-4 text-sm text-gray-300">
-            {connectionStatus} • {isInitialized ? 'Scene Ready' : 'Loading Scene...'}
-          </div>
+          <div className="text-2xl font-bold mb-2">{loadingMessage}</div>
+          <div className="text-lg opacity-75">Please wait...</div>
+          {error && (
+            <div className="mt-4 p-4 bg-red-600 rounded-lg">
+              <div className="text-lg font-semibold">Error</div>
+              <div>{error}</div>
+            </div>
+          )}
         </div>
       </div>
     );
   }
 
-  // Error screen
+  // Show error screen
   if (error) {
     return (
-      <div className="fixed inset-0 bg-red-900 flex items-center justify-center">
+      <div className="fixed inset-0 bg-gradient-to-br from-red-900 to-red-700 flex items-center justify-center">
         <div className="text-center text-white">
           <div className="text-6xl mb-4">❌</div>
           <div className="text-2xl font-bold mb-2">Connection Error</div>
           <div className="text-lg mb-4">{error}</div>
-          <button 
+          <button
             onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-white text-red-900 rounded hover:bg-gray-100"
+            className="px-6 py-3 bg-white text-red-900 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
           >
-            Retry
+            Retry Connection
           </button>
         </div>
       </div>
     );
   }
 
+  // Show 3D scene
   return (
-    <div className="relative w-full h-full">
+    <div className="w-full h-full">
       <canvas
         ref={canvasRef}
         className="w-full h-full"
-        style={{ touchAction: 'none' }}
+        style={{ outline: 'none' }}
       />
-      
-      {/* Connection status overlay */}
-      <div className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded text-sm">
-        {connectionStatus}
-      </div>
-      
-      {/* Controls help */}
-      <div className="absolute bottom-4 left-4 bg-black bg-opacity-50 text-white px-3 py-2 rounded text-sm">
-        <div>Mouse: Rotate Camera</div>
-        <div>Scroll: Zoom</div>
-        <div>Right Click: Pan</div>
-      </div>
     </div>
   );
 };
+
+export default BabylonSceneMultiplayer;

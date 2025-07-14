@@ -4,6 +4,7 @@ import { Room, User, ChatMessage, UserProgress, Achievement, InteractiveObject, 
 interface MetaverseState {
   // Connection
   isConnected: boolean;
+  isLoaded: boolean;
   currentUserId: string | null;
   currentUser: User | null;
   
@@ -86,6 +87,7 @@ interface MetaverseState {
   
   // Actions
   setConnected: (connected: boolean) => void;
+  setIsLoaded: (loaded: boolean) => void;
   setCurrentUserId: (userId: string) => void;
   setCurrentUser: (user: User) => void;
   setCurrentRoom: (room: Room) => void;
@@ -162,6 +164,7 @@ interface MetaverseState {
 export const useMetaverseStore = create<MetaverseState>((set) => ({
   // Initial state
   isConnected: false,
+  isLoaded: false,
   currentUserId: null,
   currentUser: null,
   currentRoom: null,
@@ -228,6 +231,8 @@ export const useMetaverseStore = create<MetaverseState>((set) => ({
 
   // Actions
   setConnected: (connected) => set({ isConnected: connected }),
+  
+  setIsLoaded: (loaded) => set({ isLoaded: loaded }),
   
   setCurrentUserId: (userId) => set({ currentUserId: userId }),
   
