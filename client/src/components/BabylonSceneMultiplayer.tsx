@@ -10,6 +10,10 @@ const BabylonSceneMultiplayer: React.FC = () => {
   const { isConnected, setConnected, isLoaded, setIsLoaded } = useMetaverseStore();
   const [loadingMessage, setLoadingMessage] = useState('🌍 Connecting to Metaverse...');
   const [error, setError] = useState<string | null>(null);
+  const [localLoaded, setLocalLoaded] = useState(false);
+
+  // Debug logging
+  console.log('🎮 BabylonSceneMultiplayer render:', { isConnected, isLoaded, localLoaded, loadingMessage });
 
   // Connection management
   useEffect(() => {
@@ -31,6 +35,7 @@ const BabylonSceneMultiplayer: React.FC = () => {
       console.error('❌ Connection error:', error);
       setError('Failed to connect to server');
       setIsLoaded(true); // Show error screen
+      setLocalLoaded(true);
     };
 
     // Connect to server
@@ -51,7 +56,10 @@ const BabylonSceneMultiplayer: React.FC = () => {
 
   // Initialize Babylon.js scene
   useEffect(() => {
-    if (!canvasRef.current || !isConnected) return;
+    if (!canvasRef.current || !isConnected) {
+      console.log('⏳ Waiting for canvas or connection:', { hasCanvas: !!canvasRef.current, isConnected });
+      return;
+    }
 
     console.log('🎮 Starting simplified multiplayer Babylon scene...');
 
@@ -107,8 +115,9 @@ const BabylonSceneMultiplayer: React.FC = () => {
 
       // Set loaded state after a short delay to show the scene
       setTimeout(() => {
-        console.log('✅ Scene loaded successfully');
+        console.log('✅ Scene loaded successfully - setting loaded state');
         setIsLoaded(true);
+        setLocalLoaded(true);
       }, 1000);
 
       return () => {
@@ -119,11 +128,24 @@ const BabylonSceneMultiplayer: React.FC = () => {
       console.error('❌ Error initializing scene:', err);
       setError('Failed to initialize 3D scene');
       setIsLoaded(true); // Show error screen
+      setLocalLoaded(true);
     }
   }, [isConnected, setIsLoaded]);
 
+  // Emergency timeout to prevent infinite loading
+  useEffect(() => {
+    const emergencyTimeout = setTimeout(() => {
+      console.log('🚨 Emergency timeout - forcing load completion');
+      setIsLoaded(true);
+      setLocalLoaded(true);
+    }, 5000);
+
+    return () => clearTimeout(emergencyTimeout);
+  }, [setIsLoaded]);
+
   // Show loading screen
-  if (!isLoaded) {
+  if (!isLoaded && !localLoaded) {
+    console.log('🔄 Showing loading screen');
     return (
       <div className="fixed inset-0 bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
         <div className="text-center text-white">
@@ -161,6 +183,7 @@ const BabylonSceneMultiplayer: React.FC = () => {
   }
 
   // Show 3D scene
+  console.log('🎮 Rendering 3D scene');
   return (
     <div className="w-full h-full">
       <canvas
