@@ -6,14 +6,14 @@ import { socketService } from './lib/socketService'
 import { AvatarCustomizer } from './components/AvatarCustomizer'
 
 const App: React.FC = () => {
-  const [isConnecting, setIsConnecting] = useState(false)
   const [connectionError, setConnectionError] = useState<string | null>(null)
   const [debugMode, setDebugMode] = useState(false)
   const [showCustomizer, setShowCustomizer] = useState(false)
   
-  console.log('🎮 App component rendering...')
+  console.log('🎮 App component rendering v2...')
   
   const {
+    isConnected,
     setConnected,
     setCurrentUserId,
     setCurrentUser,
@@ -48,7 +48,6 @@ const App: React.FC = () => {
   useEffect(() => {
     const initializeConnection = async () => {
       try {
-        setIsConnecting(true)
         await socketService.connect()
         setupSocketListeners()
         
@@ -58,12 +57,9 @@ const App: React.FC = () => {
           worldId: 'main-world',
           username: username
         })
-        
-        setIsConnecting(false)
       } catch (error) {
         console.error('❌ Failed to connect:', error)
         setConnectionError('Failed to connect to server')
-        setIsConnecting(false)
       }
     }
 
@@ -223,7 +219,7 @@ const App: React.FC = () => {
           Socket Connected: {socketService.isConnected ? '✅' : '❌'}
         </div>
         <div style={{ fontSize: '16px', marginBottom: '10px' }}>
-          Is Connecting: {isConnecting ? 'Yes' : 'No'}
+          Is Connected: {isConnected ? 'Yes' : 'No'}
         </div>
         <div style={{ fontSize: '16px', marginBottom: '20px' }}>
           Connection Error: {connectionError || 'None'}
@@ -249,7 +245,7 @@ const App: React.FC = () => {
     )
   }
 
-  if (isConnecting) {
+  if (!isConnected && !connectionError) {
     return (
       <div style={{
         width: '100vw',
@@ -266,7 +262,7 @@ const App: React.FC = () => {
           🌍 Connecting to Metaverse...
         </div>
         <div style={{ fontSize: '16px', opacity: 0.8 }}>
-          Initializing world building systems
+          {isConnected ? 'Loading 3D world...' : 'Initializing connection...'}
         </div>
         <div style={{
           width: '200px',
@@ -395,8 +391,8 @@ const App: React.FC = () => {
       {/* Main 3D World Scene */}
       {!showCustomizer && (() => {
         try {
-          console.log('🌍 Rendering BabylonSceneMultiplayer...')
-          return <BabylonSceneMultiplayer />
+          console.log('🌍 Rendering BabylonSceneMultiplayer v2...')
+          return <BabylonSceneMultiplayer key={`scene-${Date.now()}`} />
         } catch (error) {
           console.error('❌ Error rendering BabylonSceneMultiplayer:', error)
           return (

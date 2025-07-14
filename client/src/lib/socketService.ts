@@ -12,6 +12,8 @@ class SocketService {
   async connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
+        console.log('🔌 SocketService connecting to:', this.serverUrl);
+        console.log('🔌 SocketService options:', config.socketOptions);
         this.socket = io(this.serverUrl, config.socketOptions)
 
         this.socket.on('connect', () => {
