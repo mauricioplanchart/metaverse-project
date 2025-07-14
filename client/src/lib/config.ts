@@ -25,22 +25,22 @@ export const getServerUrl = () => {
   console.log('🔧 Config debug:', {
     VITE_SERVER_URL: import.meta.env.VITE_SERVER_URL,
     DEV: import.meta.env.DEV,
-    PROD: import.meta.env.PROD
+    PROD: import.meta.env.PROD,
+    NODE_ENV: import.meta.env.NODE_ENV
   });
   
-  // FORCE LOCALHOST FOR DEVELOPMENT - TEMPORARY FIX
-  if (import.meta.env.DEV) {
-    console.log('🏠 FORCED localhost URL: http://localhost:3001');
-    return 'http://localhost:3001';
+  // In production (Netlify), always use the environment variable
+  if (import.meta.env.PROD) {
+    if (import.meta.env.VITE_SERVER_URL) {
+      console.log('🌐 Production: Using environment URL:', import.meta.env.VITE_SERVER_URL);
+      return import.meta.env.VITE_SERVER_URL;
+    } else {
+      console.log('🌐 Production: No VITE_SERVER_URL set, using default production URL');
+      return 'https://metaverse-project-1.onrender.com';
+    }
   }
   
-  // Always use the environment variable if it's set, regardless of environment
-  if (import.meta.env.VITE_SERVER_URL) {
-    console.log('🌐 Using environment URL:', import.meta.env.VITE_SERVER_URL);
-    return import.meta.env.VITE_SERVER_URL;
-  }
-  
-  // Fallback to localhost only if no environment variable is set
-  console.log('🏠 Using localhost URL: http://localhost:3001');
+  // In development, force localhost
+  console.log('🏠 Development: FORCED localhost URL: http://localhost:3001');
   return 'http://localhost:3001';
 }; 

@@ -14,6 +14,11 @@ class SocketService {
       try {
         console.log('🔌 SocketService connecting to:', this.serverUrl);
         console.log('🔌 SocketService options:', config.socketOptions);
+        console.log('🔌 Environment:', {
+          DEV: import.meta.env.DEV,
+          PROD: import.meta.env.PROD,
+          NODE_ENV: import.meta.env.NODE_ENV
+        });
         this.socket = io(this.serverUrl, config.socketOptions)
 
         this.socket.on('connect', () => {
