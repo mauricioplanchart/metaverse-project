@@ -26,7 +26,8 @@ export async function testSupabaseConnection() {
     console.log('✅ Supabase connected successfully!');
     return true;
   } catch (error) {
-    console.error('❌ Supabase connection failed:', error.message);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ Supabase connection failed:', errorMessage);
     return false;
   }
 }

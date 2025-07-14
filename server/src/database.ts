@@ -30,8 +30,10 @@ export async function testConnection() {
     client.release();
     return true;
   } catch (error) {
-    console.error('❌ Database connection failed:', error.message);
-    console.error('Error code:', error.code);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorCode = error instanceof Error && 'code' in error ? (error as any).code : 'Unknown';
+    console.error('❌ Database connection failed:', errorMessage);
+    console.error('Error code:', errorCode);
     return false;
   }
 }

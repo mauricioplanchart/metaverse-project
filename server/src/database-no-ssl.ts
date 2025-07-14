@@ -24,7 +24,8 @@ export async function testConnection() {
     client.release();
     return true;
   } catch (error) {
-    console.error('❌ Database connection failed:', error.message);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('❌ Database connection failed:', errorMessage);
     return false;
   }
 }
