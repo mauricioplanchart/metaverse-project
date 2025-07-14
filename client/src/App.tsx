@@ -9,7 +9,6 @@ const App: React.FC = () => {
   const [connectionError, setConnectionError] = useState<string | null>(null)
   const [debugMode, setDebugMode] = useState(false)
   const [showCustomizer, setShowCustomizer] = useState(false)
-  const [forceUpdate, setForceUpdate] = useState(0)
   
   console.log('🎮 App component rendering v2...')
   
@@ -76,7 +75,6 @@ const App: React.FC = () => {
         console.log('✅ Connected to server')
         console.log('🔧 Setting isConnected to true')
         setConnected(true)
-        setForceUpdate(prev => prev + 1) // Force re-render
         console.log('🔧 isConnected should now be true')
       })
 
