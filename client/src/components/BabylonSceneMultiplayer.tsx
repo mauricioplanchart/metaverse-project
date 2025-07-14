@@ -76,14 +76,14 @@ const BabylonSceneMultiplayer: React.FC = () => {
       camera.attachControl(canvasRef.current, true);
 
       // Create light
-      const light = new BABYLON.HemisphericLight(
+      new BABYLON.HemisphericLight(
         'light',
         new BABYLON.Vector3(0, 1, 0),
         scene
       );
 
       // Create ground
-      const ground = BABYLON.MeshBuilder.CreateGround('ground', {
+      BABYLON.MeshBuilder.CreateGround('ground', {
         width: 20,
         height: 20
       }, scene);

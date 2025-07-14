@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { BabylonSceneMultiplayer } from './components/BabylonSceneMultiplayer'
+import BabylonSceneMultiplayer from './components/BabylonSceneMultiplayer'
 import ChatOverlay from './components/ChatOverlay'
 import { useMetaverseStore } from './stores/useMetaverseStore'
 import { socketService } from './lib/socketService'
