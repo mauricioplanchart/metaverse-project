@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Production Connection Test</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: rgba(76, 175, 80, 0.3); }
+        .error { background: rgba(244, 67, 54, 0.3); }
+        .info { background: rgba(33, 150, 243, 0.3); }
+        .warning { background: rgba(255, 193, 7, 0.3); }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        .env-info {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌍 Production Connection Test</h1>
+    
+    <div class="env-info">
+        <h3>Environment Information:</h3>
+        <div>URL: <span id="current-url"></span></div>
+        <div>User Agent: <span id="user-agent"></span></div>
+        <div>Timestamp: <span id="timestamp"></span></div>
+    </div>
+    
+    <div id="status"></div>
+    <div id="logs"></div>
+    
+    <div>
+        <button onclick="testProductionConnection()">Test Production Connection</button>
+        <button onclick="testHealthCheck()">Test Health Check</button>
+        <button onclick="clearLogs()">Clear Logs</button>
+    </div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const logsDiv = document.getElementById('logs');
+        const currentUrlSpan = document.getElementById('current-url');
+        const userAgentSpan = document.getElementById('user-agent');
+        const timestampSpan = document.getElementById('timestamp');
+
+        // Display environment info
+        currentUrlSpan.textContent = window.location.href;
+        userAgentSpan.textContent = navigator.userAgent;
+        timestampSpan.textContent = new Date().toISOString();
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `status ${type}`;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logsDiv.appendChild(logEntry);
+            console.log(message);
+        }
+
+        function clearLogs() {
+            logsDiv.innerHTML = '';
+        }
+
+        async function testHealthCheck() {
+            log('🏥 Testing health check...', 'info');
+            
+            try {
+                const response = await fetch('https://metaverse-project-1.onrender.com/health');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ Health check successful: ${data.status}`, 'success');
+                    log(`📊 Active connections: ${data.activeConnections}`, 'info');
+                    log(`⏱️ Uptime: ${Math.round(data.uptime)}s`, 'info');
+                } else {
+                    log(`❌ Health check failed: ${response.status}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Health check error: ${error.message}`, 'error');
+            }
+        }
+
+        function testProductionConnection() {
+            log('🔌 Testing connection to production server...', 'info');
+            
+            const socket = io('https://metaverse-project-1.onrender.com', {
+                transports: ['websocket', 'polling'],
+                timeout: 10000,
+                forceNew: true
+            });
+
+            socket.on('connect', () => {
+                log('✅ Successfully connected to production server!', 'success');
+                log(`🆔 Socket ID: ${socket.id}`, 'info');
+                statusDiv.innerHTML = '<div class="status success">✅ Production connection successful!</div>';
+                
+                // Test joining a world
+                socket.emit('join-world', {
+                    worldId: 'main-world',
+                    username: 'TestUser_' + Math.random().toString(36).substr(2, 6)
+                });
+                
+                setTimeout(() => {
+                    socket.disconnect();
+                }, 2000);
+            });
+
+            socket.on('connect_error', (error) => {
+                log(`❌ Failed to connect to production server: ${error.message}`, 'error');
+                statusDiv.innerHTML = '<div class="status error">❌ Production connection failed!</div>';
+            });
+
+            socket.on('disconnect', () => {
+                log('🔌 Disconnected from production server', 'info');
+            });
+
+            socket.on('user-id', (userId) => {
+                log(`👤 Received user ID: ${userId}`, 'success');
+            });
+
+            socket.on('room-data', (data) => {
+                log(`🏠 Room data received: ${JSON.stringify(data)}`, 'info');
+            });
+
+            // Timeout after 10 seconds
+            setTimeout(() => {
+                if (socket.connected) {
+                    log('⏰ Connection test timeout - disconnecting', 'warning');
+                    socket.disconnect();
+                }
+            }, 10000);
+        }
+
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            log('🚀 Page loaded, testing production connection...', 'info');
+            setTimeout(() => {
+                testHealthCheck();
+                setTimeout(testProductionConnection, 1000);
+            }, 500);
+        });
+    </script>
+</body>
+</html>
