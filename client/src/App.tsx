@@ -46,8 +46,18 @@ const App: React.FC = () => {
 
   // Initialize socket connection on mount
   useEffect(() => {
+    let connectionTimeout: NodeJS.Timeout;
+    
     const initializeConnection = async () => {
       try {
+        console.log('🚀 Starting connection attempt...');
+        
+        // Set a timeout for the entire connection process
+        connectionTimeout = setTimeout(() => {
+          console.error('⏰ Connection process timeout');
+          setConnectionError('Connection timeout - server may be unavailable');
+        }, 15000);
+        
         await socketService.connect()
         setupSocketListeners()
         
@@ -55,6 +65,7 @@ const App: React.FC = () => {
         if (socketService.isConnected) {
           console.log('🔧 Socket is connected, forcing state update')
           setConnected(true)
+          setConnectionError(null) // Clear any previous errors
         }
         
         // Join the default world
@@ -63,9 +74,12 @@ const App: React.FC = () => {
           worldId: 'main-world',
           username: username
         })
+        
+        clearTimeout(connectionTimeout);
       } catch (error) {
         console.error('❌ Failed to connect:', error)
-        setConnectionError('Failed to connect to server')
+        clearTimeout(connectionTimeout);
+        setConnectionError(`Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
       }
     }
 
@@ -395,30 +409,62 @@ const App: React.FC = () => {
         <div style={{ fontSize: '24px', marginBottom: '20px' }}>
           ❌ Connection Failed
         </div>
-        <div style={{ fontSize: '16px', opacity: 0.8, marginBottom: '30px' }}>
+        <div style={{ fontSize: '16px', opacity: 0.8, marginBottom: '20px', textAlign: 'center', maxWidth: '500px' }}>
           {connectionError}
         </div>
-        <button
-          onClick={() => window.location.reload()}
-          style={{
-            padding: '12px 24px',
-            fontSize: '16px',
-            backgroundColor: 'rgba(255, 255, 255, 0.2)',
-            color: 'white',
-            border: '2px solid white',
-            borderRadius: '8px',
-            cursor: 'pointer',
-            transition: 'all 0.3s ease'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.3)'
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'
-          }}
-        >
-          🔄 Retry Connection
-        </button>
+        <div style={{ fontSize: '14px', opacity: 0.7, marginBottom: '30px', textAlign: 'center', maxWidth: '500px' }}>
+          The server might be starting up or temporarily unavailable. This is common with free hosting services.
+        </div>
+        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <button
+            onClick={() => {
+              setConnectionError(null);
+              window.location.reload();
+            }}
+            style={{
+              padding: '12px 24px',
+              fontSize: '16px',
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              color: 'white',
+              border: '2px solid white',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.3)'
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'
+            }}
+          >
+            🔄 Retry Connection
+          </button>
+          <button
+            onClick={() => {
+              setConnectionError(null);
+              setConnected(true); // Force continue without connection
+            }}
+            style={{
+              padding: '12px 24px',
+              fontSize: '16px',
+              backgroundColor: 'rgba(255, 255, 255, 0.1)',
+              color: 'white',
+              border: '2px solid rgba(255, 255, 255, 0.5)',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.2)'
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.1)'
+            }}
+          >
+            🚀 Continue Offline
+          </button>
+        </div>
       </div>
     )
   }

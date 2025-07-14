@@ -1,9 +1,11 @@
 import { io, Socket } from 'socket.io-client'
-import { getServerUrl, config } from './config'
+import { getServerUrl } from './config'
 
 class SocketService {
   private socket: Socket | null = null
   private readonly serverUrl: string
+  private connectionAttempts = 0
+  private maxAttempts = 3
 
   constructor() {
     this.serverUrl = getServerUrl()
@@ -13,73 +15,97 @@ class SocketService {
     return new Promise((resolve, reject) => {
       try {
         console.log('🔌 SocketService connecting to:', this.serverUrl);
-        console.log('🔌 SocketService options:', config.socketOptions);
-        console.log('🔌 Environment:', {
-          DEV: import.meta.env.DEV,
-          PROD: import.meta.env.PROD,
-          NODE_ENV: import.meta.env.NODE_ENV
-        });
+        console.log('🔌 Attempt #', this.connectionAttempts + 1);
         
-        // Try simpler connection first
-        console.log('🔌 Attempting simple connection...');
+        // Prevent multiple connection attempts
+        if (this.socket?.connected) {
+          console.log('✅ Already connected');
+          resolve();
+          return;
+        }
+
+        // Clean up existing socket
+        if (this.socket) {
+          this.socket.disconnect();
+          this.socket = null;
+        }
+
+        // Try connection with shorter timeout
         this.socket = io(this.serverUrl, {
-          transports: ['polling', 'websocket'],
-          timeout: 30000,
-          forceNew: true
+          transports: ['websocket', 'polling'],
+          timeout: 10000, // Reduced from 30000
+          forceNew: true,
+          reconnection: true,
+          reconnectionAttempts: 3,
+          reconnectionDelay: 1000
         });
+
+        const connectionTimeout = setTimeout(() => {
+          console.error('⏰ Connection timeout after 10 seconds');
+          reject(new Error('Connection timeout'));
+        }, 10000);
 
         this.socket.on('connect', () => {
-          console.log('✅ Connected to server')
-          console.log('🔧 Socket ID:', this.socket?.id)
-          console.log('🔧 Socket connected state:', this.socket?.connected)
-          resolve()
-        })
+          console.log('✅ Connected to server');
+          console.log('🔧 Socket ID:', this.socket?.id);
+          clearTimeout(connectionTimeout);
+          this.connectionAttempts = 0;
+          resolve();
+        });
 
         this.socket.on('connect_error', (error) => {
-          console.error('❌ Connection error:', error)
-          console.error('❌ Error details:', {
-            message: error.message,
-            name: error.name,
-            stack: error.stack
-          })
-          reject(error)
-        })
+          console.error('❌ Connection error:', error);
+          clearTimeout(connectionTimeout);
+          this.connectionAttempts++;
+          
+          if (this.connectionAttempts >= this.maxAttempts) {
+            console.error('❌ Max connection attempts reached');
+            reject(new Error(`Failed to connect after ${this.maxAttempts} attempts: ${error.message}`));
+          } else {
+            console.log(`🔄 Retrying connection (${this.connectionAttempts}/${this.maxAttempts})...`);
+          }
+        });
 
         this.socket.on('disconnect', (reason) => {
-          console.log('❌ Disconnected:', reason)
-        })
+          console.log('❌ Disconnected:', reason);
+          if (reason === 'io server disconnect') {
+            // Server disconnected us, don't try to reconnect
+            this.socket = null;
+          }
+        });
 
         this.socket.on('error', (error) => {
-          console.error('❌ Socket error:', error)
-          reject(error)
-        })
+          console.error('❌ Socket error:', error);
+          clearTimeout(connectionTimeout);
+          reject(error);
+        });
 
         // Add more debugging events
         this.socket.on('connecting', () => {
-          console.log('🔄 Connecting...')
-        })
+          console.log('🔄 Connecting...');
+        });
 
         this.socket.on('reconnect', (attemptNumber) => {
-          console.log('🔄 Reconnected after', attemptNumber, 'attempts')
-        })
+          console.log('🔄 Reconnected after', attemptNumber, 'attempts');
+        });
 
         this.socket.on('reconnect_attempt', (attemptNumber) => {
-          console.log('🔄 Reconnection attempt', attemptNumber)
-        })
+          console.log('🔄 Reconnection attempt', attemptNumber);
+        });
 
         this.socket.on('reconnect_error', (error) => {
-          console.error('❌ Reconnection error:', error)
-        })
+          console.error('❌ Reconnection error:', error);
+        });
 
         this.socket.on('reconnect_failed', () => {
-          console.error('❌ Reconnection failed')
-        })
+          console.error('❌ Reconnection failed');
+        });
 
       } catch (error) {
-        console.error('❌ Socket creation error:', error)
-        reject(error)
+        console.error('❌ Socket creation error:', error);
+        reject(error);
       }
-    })
+    });
   }
 
   disconnect(): void {
