@@ -21,8 +21,11 @@ export const config = {
 
 // Helper function to get the correct server URL
 export const getServerUrl = () => {
-  if (config.isDevelopment) {
-    return 'http://localhost:3001';
+  // Always use the environment variable if it's set, regardless of environment
+  if (import.meta.env.VITE_SERVER_URL) {
+    return import.meta.env.VITE_SERVER_URL;
   }
-  return config.serverUrl;
+  
+  // Fallback to localhost only if no environment variable is set
+  return 'http://localhost:3001';
 }; 
