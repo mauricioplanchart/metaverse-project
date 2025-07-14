@@ -206,22 +206,6 @@ export const BabylonSceneMultiplayer: React.FC = () => {
       setError(null);
       console.log('🎉 Scene initialization complete!');
 
-      // Force loading state update
-      setTimeout(() => {
-        console.log('🔄 Forcing loading state update');
-        setIsLoaded(true);
-        setError(null);
-      }, 100);
-
-      // Fallback timeout to ensure loading completes
-      setTimeout(() => {
-        if (!isLoaded) {
-          console.log('⚠️ Forcing load completion due to timeout');
-          setIsLoaded(true);
-          setError(null);
-        }
-      }, 3000);
-
       // Cleanup function
       return () => {
         window.removeEventListener('resize', handleResize);
