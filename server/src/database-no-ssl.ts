@@ -7,8 +7,9 @@ dotenv.config();
 const { Pool } = pg;
 
 // Create a connection pool without SSL (for testing)
+// Temporarily disabled for Railway deployment without database
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
+  connectionString: process.env.DATABASE_URL || 'postgresql://dummy:dummy@localhost:5432/dummy',
   ssl: false  // Try without SSL
 });
 
