@@ -1,0 +1,9 @@
+client/
+metaverse-mvp/
+shared/
+DEPLOYMENT.md
+NETLIFY_SETUP.md
+start-dev.sh
+test-websocket.html
+.gitignore
+README.md 

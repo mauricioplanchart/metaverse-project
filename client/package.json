@@ -3,15 +3,6 @@
   "version": "1.0.0",
   "description": "Metaverse project with client and server",
   "private": true,
-  "workspaces": [
-    "client",
-    "server"
-  ],
-  "scripts": {
-    "build": "cd server && npm run build",
-    "start": "cd server && npm start",
-    "dev": "cd server && npm run dev"
-  },
   "engines": {
     "node": ">=18.0.0"
   }
