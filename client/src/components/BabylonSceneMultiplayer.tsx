@@ -87,11 +87,14 @@ const BabylonSceneMultiplayer: React.FC = () => {
       box.position.y = 0.5;
 
       // Add more 3D objects to make the scene interesting
+      console.log('🎨 Creating 3D objects...');
+      
       // Create a red sphere
       const redSphere = BABYLON.MeshBuilder.CreateSphere('redSphere', {
         diameter: 0.8
       }, scene);
       redSphere.position.set(3, 0.4, 0);
+      console.log('🔴 Created red sphere at position:', redSphere.position);
       
       // Create a green cylinder
       const greenCylinder = BABYLON.MeshBuilder.CreateCylinder('greenCylinder', {
@@ -99,12 +102,14 @@ const BabylonSceneMultiplayer: React.FC = () => {
         diameter: 0.6
       }, scene);
       greenCylinder.position.set(-3, 0.75, 0);
+      console.log('🟢 Created green cylinder at position:', greenCylinder.position);
       
       // Create a blue sphere
       const blueSphere = BABYLON.MeshBuilder.CreateSphere('blueSphere', {
         diameter: 0.6
       }, scene);
       blueSphere.position.set(0, 0.3, 3);
+      console.log('🔵 Created blue sphere at position:', blueSphere.position);
       
       // Create a yellow cylinder
       const yellowCylinder = BABYLON.MeshBuilder.CreateCylinder('yellowCylinder', {
@@ -112,12 +117,14 @@ const BabylonSceneMultiplayer: React.FC = () => {
         diameter: 0.4
       }, scene);
       yellowCylinder.position.set(0, 0.6, -3);
+      console.log('🟡 Created yellow cylinder at position:', yellowCylinder.position);
       
       // Create a purple sphere
       const purpleSphere = BABYLON.MeshBuilder.CreateSphere('purpleSphere', {
         diameter: 0.7
       }, scene);
       purpleSphere.position.set(2, 0.35, 2);
+      console.log('🟣 Created purple sphere at position:', purpleSphere.position);
       
       // Create an orange cylinder
       const orangeCylinder = BABYLON.MeshBuilder.CreateCylinder('orangeCylinder', {
@@ -125,48 +132,66 @@ const BabylonSceneMultiplayer: React.FC = () => {
         diameter: 0.5
       }, scene);
       orangeCylinder.position.set(-2, 0.9, -2);
+      console.log('🟠 Created orange cylinder at position:', orangeCylinder.position);
 
       // Add materials and colors to all objects
+      console.log('🎨 Applying materials to objects...');
+      
       // Blue box
       const boxMaterial = new BABYLON.StandardMaterial('boxMat', scene);
       boxMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.6, 1);
       box.material = boxMaterial;
+      console.log('🔵 Applied blue material to box');
       
       // Red sphere
       const redSphereMaterial = new BABYLON.StandardMaterial('redSphereMat', scene);
       redSphereMaterial.diffuseColor = new BABYLON.Color3(1, 0.2, 0.2);
       redSphere.material = redSphereMaterial;
+      console.log('🔴 Applied red material to sphere');
       
       // Green cylinder
       const greenCylinderMaterial = new BABYLON.StandardMaterial('greenCylinderMat', scene);
       greenCylinderMaterial.diffuseColor = new BABYLON.Color3(0.2, 1, 0.2);
       greenCylinder.material = greenCylinderMaterial;
+      console.log('🟢 Applied green material to cylinder');
       
       // Blue sphere
       const blueSphereMaterial = new BABYLON.StandardMaterial('blueSphereMat', scene);
       blueSphereMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.2, 1);
       blueSphere.material = blueSphereMaterial;
+      console.log('🔵 Applied blue material to sphere');
       
       // Yellow cylinder
       const yellowCylinderMaterial = new BABYLON.StandardMaterial('yellowCylinderMat', scene);
       yellowCylinderMaterial.diffuseColor = new BABYLON.Color3(1, 1, 0.2);
       yellowCylinder.material = yellowCylinderMaterial;
+      console.log('🟡 Applied yellow material to cylinder');
       
       // Purple sphere
       const purpleSphereMaterial = new BABYLON.StandardMaterial('purpleSphereMat', scene);
       purpleSphereMaterial.diffuseColor = new BABYLON.Color3(0.8, 0.2, 1);
       purpleSphere.material = purpleSphereMaterial;
+      console.log('🟣 Applied purple material to sphere');
       
       // Orange cylinder
       const orangeCylinderMaterial = new BABYLON.StandardMaterial('orangeCylinderMat', scene);
       orangeCylinderMaterial.diffuseColor = new BABYLON.Color3(1, 0.6, 0.2);
       orangeCylinder.material = orangeCylinderMaterial;
+      console.log('🟠 Applied orange material to cylinder');
 
       // Add some visual interest for offline mode
       if (isOfflineMode) {
         // Additional objects for offline mode can be added here
         console.log('🎨 Offline mode: Additional objects can be added here');
       }
+
+      // Log summary of all objects created
+      console.log('🎮 Scene objects summary:');
+      console.log('  - 1 blue box (original)');
+      console.log('  - 3 spheres (red, blue, purple)');
+      console.log('  - 3 cylinders (green, yellow, orange)');
+      console.log('  - 1 ground plane');
+      console.log('  - Total: 8 objects in scene');
 
       // Start render loop
       engine.runRenderLoop(() => {
