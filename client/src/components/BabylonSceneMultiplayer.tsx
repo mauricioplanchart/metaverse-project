@@ -1,6 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
-import * as BABYLON from '@babylonjs/core';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useMetaverseStore } from '../stores/useMetaverseStore';
+
+// Import Babylon.js
+import * as BABYLON from '@babylonjs/core';
 
 const BabylonSceneMultiplayer: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -9,16 +11,31 @@ const BabylonSceneMultiplayer: React.FC = () => {
   const { isConnected } = useMetaverseStore();
   const [error, setError] = useState<string | null>(null);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   // Debug logging
-  console.log('🎮 BabylonSceneMultiplayer render v2:', { isConnected });
-
-  // No connection management needed - handled by App.tsx
+  console.log('🎮 BabylonSceneMultiplayer render v2:', { isConnected, error, isOfflineMode });
+  console.log('🎮 Canvas ref:', canvasRef.current);
+  console.log('🎮 Engine ref:', engineRef.current);
+  console.log('🎮 Scene ref:', sceneRef.current);
 
   // Initialize Babylon.js scene
-  useEffect(() => {
-    if (!canvasRef.current) {
-      console.log('⏳ Waiting for canvas...');
+  const initializeScene = useCallback(() => {
+    if (!canvasRef.current || isInitialized) {
+      console.log('⏳ Waiting for canvas or already initialized...');
+      return;
+    }
+
+    // Check if Babylon.js is available
+    if (!BABYLON) {
+      console.error('❌ Babylon.js not available');
+      setError('Babylon.js failed to load');
+      return;
+    }
+
+    // Prevent multiple initializations
+    if (engineRef.current && sceneRef.current) {
+      console.log('🎮 Scene already initialized, skipping...');
       return;
     }
 
@@ -108,15 +125,37 @@ const BabylonSceneMultiplayer: React.FC = () => {
       };
       window.addEventListener('resize', handleResize);
 
+      setIsInitialized(true);
+      console.log('🎮 Scene initialized successfully');
+
       return () => {
         window.removeEventListener('resize', handleResize);
-        engine.dispose();
+        if (engine) {
+          engine.dispose();
+        }
       };
     } catch (err) {
       console.error('❌ Error initializing scene:', err);
       setError('Failed to initialize 3D scene');
     }
-  }, [isConnected]);
+  }, [isInitialized, isConnected, isOfflineMode]);
+
+  useEffect(() => {
+    initializeScene();
+  }, [initializeScene]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (engineRef.current) {
+        console.log('🧹 Cleaning up Babylon.js engine');
+        engineRef.current.dispose();
+        engineRef.current = null;
+        sceneRef.current = null;
+        setIsInitialized(false);
+      }
+    };
+  }, []);
 
   // Show error screen
   if (error) {
@@ -140,7 +179,7 @@ const BabylonSceneMultiplayer: React.FC = () => {
   // Show 3D scene
   console.log('🎮 Rendering 3D scene');
   return (
-    <div className="w-full h-full relative">
+    <div className="w-full h-full relative" style={{ backgroundColor: '#1a1a1a' }}>
       <canvas
         ref={canvasRef}
         className="w-full h-full"
@@ -162,6 +201,24 @@ const BabylonSceneMultiplayer: React.FC = () => {
           🔌 Offline Mode
         </div>
       )}
+      {/* Debug overlay */}
+      <div style={{
+        position: 'absolute',
+        top: '20px',
+        right: '20px',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        color: 'white',
+        padding: '8px 12px',
+        borderRadius: '8px',
+        fontSize: '12px',
+        fontFamily: 'monospace'
+      }}>
+        <div>Connected: {isConnected ? '✅' : '❌'}</div>
+        <div>Error: {error ? '❌' : '✅'}</div>
+        <div>Offline: {isOfflineMode ? '✅' : '❌'}</div>
+        <div>Canvas: {canvasRef.current ? '✅' : '❌'}</div>
+        <div>Initialized: {isInitialized ? '✅' : '❌'}</div>
+      </div>
     </div>
   );
 };

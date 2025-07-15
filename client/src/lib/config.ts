@@ -43,8 +43,8 @@ export const getServerUrl = () => {
   
   // If we're on Netlify or production, use the production backend
   if (isNetlify) {
-    console.log('🌐 Production/Netlify: Using Railway backend URL');
-    return 'https://metaverse-project-production-1.up.railway.app';
+    console.log('🌐 Production/Netlify: Using Render backend URL');
+    return 'https://metaverse-project-2.onrender.com';
   }
   
   // In development, use localhost

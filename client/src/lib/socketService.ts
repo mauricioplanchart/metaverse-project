@@ -30,20 +30,20 @@ class SocketService {
           this.socket = null;
         }
 
-        // Try connection with shorter timeout
+        // Try connection with longer timeout
         this.socket = io(this.serverUrl, {
           transports: ['websocket', 'polling'],
-          timeout: 10000, // Reduced from 30000
+          timeout: 30000, // Increased to 30 seconds
           forceNew: true,
           reconnection: true,
-          reconnectionAttempts: 3,
-          reconnectionDelay: 1000
+          reconnectionAttempts: 5,
+          reconnectionDelay: 2000
         });
 
         const connectionTimeout = setTimeout(() => {
-          console.error('⏰ Connection timeout after 10 seconds');
+          console.error('⏰ Connection timeout after 30 seconds');
           reject(new Error('Connection timeout'));
-        }, 10000);
+        }, 30000);
 
         this.socket.on('connect', () => {
           console.log('✅ Connected to server');

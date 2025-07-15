@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import BabylonSceneMultiplayer from './components/BabylonSceneMultiplayer'
+// import SimpleTestScene from './components/SimpleTestScene'
+// import BabylonMinimalTest from './components/BabylonMinimalTest'
 import ChatOverlay from './components/ChatOverlay'
 import { useMetaverseStore } from './stores/useMetaverseStore'
 import { socketService } from './lib/socketService'
@@ -9,6 +11,8 @@ const App: React.FC = () => {
   const [connectionError, setConnectionError] = useState<string | null>(null)
   const [debugMode, setDebugMode] = useState(false)
   const [showCustomizer, setShowCustomizer] = useState(false)
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [forceProceed, setForceProceed] = useState(false)
   
   console.log('🎮 App component rendering v2...')
   
@@ -46,11 +50,17 @@ const App: React.FC = () => {
 
   // Initialize socket connection on mount
   useEffect(() => {
+    if (isInitialized) {
+      console.log('🔄 Connection already initialized, skipping...');
+      return;
+    }
+    
     let connectionTimeout: NodeJS.Timeout;
     
     const initializeConnection = async () => {
       try {
         console.log('🚀 Starting connection attempt...');
+        setIsInitialized(true);
         
         // Set a timeout for the entire connection process
         connectionTimeout = setTimeout(() => {
@@ -80,6 +90,7 @@ const App: React.FC = () => {
         console.error('❌ Failed to connect:', error)
         clearTimeout(connectionTimeout);
         setConnectionError(`Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        setIsInitialized(false); // Allow retry
       }
     }
 
@@ -218,20 +229,23 @@ const App: React.FC = () => {
     // Initialize connection immediately
     initializeConnection()
 
-    // Periodic check to ensure connection state is in sync
-    const intervalId = setInterval(() => {
-      if (socketService.isConnected && !isConnected) {
-        console.log('🔧 Periodic check: Socket connected but state wrong, fixing...')
-        setConnected(true)
-      }
-    }, 1000)
-
     // Cleanup on unmount
     return () => {
-      clearInterval(intervalId)
       socketService.disconnect()
     }
-  }, [isConnected])
+  }, [isInitialized]) // Only depend on isInitialized
+
+  // Emergency timeout to force proceed if stuck
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!isConnected && !connectionError && !forceProceed) {
+        console.log('🚨 Emergency timeout: forcing proceed after 10 seconds');
+        setForceProceed(true);
+      }
+    }, 10000);
+
+    return () => clearTimeout(timeout);
+  }, [isConnected, connectionError, forceProceed]);
 
   if (debugMode) {
     return (
@@ -277,49 +291,15 @@ const App: React.FC = () => {
     )
   }
 
-  // Check if socket is actually connected but state is wrong
-  const socketActuallyConnected = socketService.isConnected;
-  const shouldShowLoading = !isConnected && !connectionError;
+  // Check if we should proceed (connected, forced, or socket connected)
+  const shouldProceed = isConnected || forceProceed || socketService.isConnected;
+  const shouldShowLoading = !shouldProceed && !connectionError;
   
-  // If socket is connected but state is wrong, force proceed
-  if (socketActuallyConnected && !isConnected) {
-    console.log('🔧 Socket connected but state wrong, forcing proceed...');
-    setConnected(true);
-  }
+  console.log('🔧 App render: isConnected =', isConnected, 'connectionError =', connectionError, 'forceProceed =', forceProceed);
+  console.log('🔧 Socket service connected =', socketService.isConnected);
   
-  // Emergency override: if we've been stuck for more than 5 seconds, force proceed
-  const [stuckTime, setStuckTime] = useState(0);
-  useEffect(() => {
-    if (!isConnected && !connectionError) {
-      const timer = setTimeout(() => {
-        setStuckTime(prev => prev + 1);
-      }, 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setStuckTime(0);
-    }
-  }, [isConnected, connectionError]);
-  
-  if (stuckTime >= 5) {
-    console.log('🚨 Emergency override: forcing connection after 5 seconds');
-    setConnected(true);
-    setStuckTime(0);
-  }
-  
-  // Additional check: if we're on Netlify and have been stuck, force proceed
-  const isNetlify = window.location.hostname.includes('netlify.app') || 
-                   window.location.hostname.includes('metaverse-project');
-  
-  if (isNetlify && stuckTime >= 3) {
-    console.log('🚨 Netlify override: forcing connection after 3 seconds on Netlify');
-    setConnected(true);
-    setStuckTime(0);
-  }
-  
-  // Simplified loading condition - if socket is connected, proceed
+  // Simplified loading condition
   if (shouldShowLoading) {
-    console.log('🔧 App render: isConnected =', isConnected, 'connectionError =', connectionError);
-    console.log('🔧 Socket service connected =', socketService.isConnected);
     return (
       <div style={{
         width: '100vw',
@@ -341,9 +321,6 @@ const App: React.FC = () => {
         <div style={{ fontSize: '12px', opacity: 0.6, marginTop: '10px' }}>
           Debug: Socket connected = {socketService.isConnected ? 'Yes' : 'No'}
         </div>
-        <div style={{ fontSize: '12px', opacity: 0.6, marginTop: '5px' }}>
-          Stuck for: {stuckTime} seconds
-        </div>
         <div style={{
           width: '200px',
           height: '4px',
@@ -360,27 +337,24 @@ const App: React.FC = () => {
             animation: 'loading 2s infinite'
           }} />
         </div>
-        {stuckTime >= 3 && (
-          <button
-            onClick={() => {
-              console.log('🚨 Manual override clicked');
-              setConnected(true);
-              setStuckTime(0);
-            }}
-            style={{
-              marginTop: '20px',
-              padding: '10px 20px',
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              color: 'white',
-              border: '2px solid white',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '14px'
-            }}
-          >
-            🚨 Force Continue (Manual Override)
-          </button>
-        )}
+        <button
+          onClick={() => {
+            console.log('🚨 Manual override clicked');
+            setForceProceed(true);
+          }}
+          style={{
+            marginTop: '20px',
+            padding: '10px 20px',
+            backgroundColor: 'rgba(255, 255, 255, 0.2)',
+            color: 'white',
+            border: '2px solid white',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '14px'
+          }}
+        >
+          🚨 Force Continue (Manual Override)
+        </button>
         <style>
           {`
             @keyframes loading {
@@ -443,7 +417,7 @@ const App: React.FC = () => {
           <button
             onClick={() => {
               setConnectionError(null);
-              setConnected(true); // Force continue without connection
+              setForceProceed(true); // Force continue without connection
             }}
             style={{
               padding: '12px 24px',
@@ -524,8 +498,9 @@ const App: React.FC = () => {
       {/* Main 3D World Scene */}
       {!showCustomizer && (() => {
         try {
-          console.log('🌍 Rendering BabylonSceneMultiplayer v2...')
-          return <BabylonSceneMultiplayer key={`scene-${Date.now()}`} />
+          console.log('🌍 Rendering BabylonSceneMultiplayer...')
+          console.log('🔧 Debug info:', { isConnected, connectionError, showCustomizer })
+          return <BabylonSceneMultiplayer key="scene-main" />
         } catch (error) {
           console.error('❌ Error rendering BabylonSceneMultiplayer:', error)
           return (
