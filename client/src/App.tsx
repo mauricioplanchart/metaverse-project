@@ -13,8 +13,9 @@ const App: React.FC = () => {
   const [showCustomizer, setShowCustomizer] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
   const [forceProceed, setForceProceed] = useState(false)
+  const [version] = useState(() => Date.now()) // Cache busting
   
-  console.log('🎮 App component rendering v2...')
+  console.log('🎮 App component rendering v3...', { version })
   
   const {
     isConnected,
@@ -48,7 +49,7 @@ const App: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyPress)
   }, [debugMode, showCustomizer])
 
-  // Initialize socket connection on mount
+  // Initialize socket connection on mount - ONLY ONCE
   useEffect(() => {
     if (isInitialized) {
       console.log('🔄 Connection already initialized, skipping...');
@@ -233,7 +234,7 @@ const App: React.FC = () => {
     return () => {
       socketService.disconnect()
     }
-  }, [isInitialized]) // Only depend on isInitialized
+  }, []) // Empty dependency array - only run once
 
   // Emergency timeout to force proceed if stuck
   useEffect(() => {
@@ -270,6 +271,9 @@ const App: React.FC = () => {
         <div style={{ fontSize: '16px', marginBottom: '20px' }}>
           Connection Error: {connectionError || 'None'}
         </div>
+        <div style={{ fontSize: '12px', marginBottom: '10px' }}>
+          Version: {version}
+        </div>
         <button
           onClick={() => setDebugMode(false)}
           style={{
@@ -295,7 +299,7 @@ const App: React.FC = () => {
   const shouldProceed = isConnected || forceProceed || socketService.isConnected;
   const shouldShowLoading = !shouldProceed && !connectionError;
   
-  console.log('🔧 App render: isConnected =', isConnected, 'connectionError =', connectionError, 'forceProceed =', forceProceed);
+  console.log('🔧 App render v3: isConnected =', isConnected, 'connectionError =', connectionError, 'forceProceed =', forceProceed);
   console.log('🔧 Socket service connected =', socketService.isConnected);
   
   // Simplified loading condition
@@ -320,6 +324,9 @@ const App: React.FC = () => {
         </div>
         <div style={{ fontSize: '12px', opacity: 0.6, marginTop: '10px' }}>
           Debug: Socket connected = {socketService.isConnected ? 'Yes' : 'No'}
+        </div>
+        <div style={{ fontSize: '12px', opacity: 0.6, marginTop: '5px' }}>
+          Version: {version}
         </div>
         <div style={{
           width: '200px',
@@ -500,7 +507,7 @@ const App: React.FC = () => {
         try {
           console.log('🌍 Rendering BabylonSceneMultiplayer...')
           console.log('🔧 Debug info:', { isConnected, connectionError, showCustomizer })
-          return <BabylonSceneMultiplayer key="scene-main" />
+          return <BabylonSceneMultiplayer key={`scene-main-${version}`} />
         } catch (error) {
           console.error('❌ Error rendering BabylonSceneMultiplayer:', error)
           return (
