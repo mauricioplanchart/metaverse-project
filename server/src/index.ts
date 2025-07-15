@@ -5,7 +5,7 @@ import dotenv from 'dotenv';
 import { Server } from 'socket.io';
 import { createServer } from 'http';
 import { WorldManager } from './worldManager.js';
-import { Room, User, WorldEvent, UserProgress, ChatMessage, EmojiReaction, FriendRequest, PrivateMessage, SocialEvent, UserProfile } from '../../shared/types.js';
+import { Room, User, WorldEvent, UserProgress, ChatMessage, EmojiReaction, FriendRequest, PrivateMessage, SocialEvent, UserProfile } from './types.js';
 
 // Load environment variables
 dotenv.config();

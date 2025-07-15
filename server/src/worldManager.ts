@@ -1,4 +1,4 @@
-import { Room, Teleporter, InteractiveObject, EnvironmentSettings, UserProgress, Achievement } from '../../shared/types.js';
+import { Room, Teleporter, InteractiveObject, EnvironmentSettings, UserProgress, Achievement } from './types.js';
 
 export class WorldManager {
   private rooms: Map<string, Room> = new Map();
