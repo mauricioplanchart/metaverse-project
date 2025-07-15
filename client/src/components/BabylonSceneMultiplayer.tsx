@@ -86,32 +86,86 @@ const BabylonSceneMultiplayer: React.FC = () => {
       }, scene);
       box.position.y = 0.5;
 
+      // Add more 3D objects to make the scene interesting
+      // Create a red sphere
+      const redSphere = BABYLON.MeshBuilder.CreateSphere('redSphere', {
+        diameter: 0.8
+      }, scene);
+      redSphere.position.set(3, 0.4, 0);
+      
+      // Create a green cylinder
+      const greenCylinder = BABYLON.MeshBuilder.CreateCylinder('greenCylinder', {
+        height: 1.5,
+        diameter: 0.6
+      }, scene);
+      greenCylinder.position.set(-3, 0.75, 0);
+      
+      // Create a blue sphere
+      const blueSphere = BABYLON.MeshBuilder.CreateSphere('blueSphere', {
+        diameter: 0.6
+      }, scene);
+      blueSphere.position.set(0, 0.3, 3);
+      
+      // Create a yellow cylinder
+      const yellowCylinder = BABYLON.MeshBuilder.CreateCylinder('yellowCylinder', {
+        height: 1.2,
+        diameter: 0.4
+      }, scene);
+      yellowCylinder.position.set(0, 0.6, -3);
+      
+      // Create a purple sphere
+      const purpleSphere = BABYLON.MeshBuilder.CreateSphere('purpleSphere', {
+        diameter: 0.7
+      }, scene);
+      purpleSphere.position.set(2, 0.35, 2);
+      
+      // Create an orange cylinder
+      const orangeCylinder = BABYLON.MeshBuilder.CreateCylinder('orangeCylinder', {
+        height: 1.8,
+        diameter: 0.5
+      }, scene);
+      orangeCylinder.position.set(-2, 0.9, -2);
+
+      // Add materials and colors to all objects
+      // Blue box
+      const boxMaterial = new BABYLON.StandardMaterial('boxMat', scene);
+      boxMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.6, 1);
+      box.material = boxMaterial;
+      
+      // Red sphere
+      const redSphereMaterial = new BABYLON.StandardMaterial('redSphereMat', scene);
+      redSphereMaterial.diffuseColor = new BABYLON.Color3(1, 0.2, 0.2);
+      redSphere.material = redSphereMaterial;
+      
+      // Green cylinder
+      const greenCylinderMaterial = new BABYLON.StandardMaterial('greenCylinderMat', scene);
+      greenCylinderMaterial.diffuseColor = new BABYLON.Color3(0.2, 1, 0.2);
+      greenCylinder.material = greenCylinderMaterial;
+      
+      // Blue sphere
+      const blueSphereMaterial = new BABYLON.StandardMaterial('blueSphereMat', scene);
+      blueSphereMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.2, 1);
+      blueSphere.material = blueSphereMaterial;
+      
+      // Yellow cylinder
+      const yellowCylinderMaterial = new BABYLON.StandardMaterial('yellowCylinderMat', scene);
+      yellowCylinderMaterial.diffuseColor = new BABYLON.Color3(1, 1, 0.2);
+      yellowCylinder.material = yellowCylinderMaterial;
+      
+      // Purple sphere
+      const purpleSphereMaterial = new BABYLON.StandardMaterial('purpleSphereMat', scene);
+      purpleSphereMaterial.diffuseColor = new BABYLON.Color3(0.8, 0.2, 1);
+      purpleSphere.material = purpleSphereMaterial;
+      
+      // Orange cylinder
+      const orangeCylinderMaterial = new BABYLON.StandardMaterial('orangeCylinderMat', scene);
+      orangeCylinderMaterial.diffuseColor = new BABYLON.Color3(1, 0.6, 0.2);
+      orangeCylinder.material = orangeCylinderMaterial;
+
       // Add some visual interest for offline mode
       if (isOfflineMode) {
-        // Create a few more objects to make the scene more interesting
-        const sphere = BABYLON.MeshBuilder.CreateSphere('sphere', {
-          diameter: 0.8
-        }, scene);
-        sphere.position.set(3, 0.4, 0);
-        
-        const cylinder = BABYLON.MeshBuilder.CreateCylinder('cylinder', {
-          height: 1.5,
-          diameter: 0.6
-        }, scene);
-        cylinder.position.set(-3, 0.75, 0);
-        
-        // Add some color
-        const boxMaterial = new BABYLON.StandardMaterial('boxMat', scene);
-        boxMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.6, 1);
-        box.material = boxMaterial;
-        
-        const sphereMaterial = new BABYLON.StandardMaterial('sphereMat', scene);
-        sphereMaterial.diffuseColor = new BABYLON.Color3(1, 0.4, 0.2);
-        sphere.material = sphereMaterial;
-        
-        const cylinderMaterial = new BABYLON.StandardMaterial('cylinderMat', scene);
-        cylinderMaterial.diffuseColor = new BABYLON.Color3(0.2, 1, 0.4);
-        cylinder.material = cylinderMaterial;
+        // Additional objects for offline mode can be added here
+        console.log('🎨 Offline mode: Additional objects can be added here');
       }
 
       // Start render loop
