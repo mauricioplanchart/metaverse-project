@@ -1708,8 +1708,8 @@ setInterval(() => {
 }, 5 * 60 * 1000);
 
 // Start server
-server.listen(PORT, () => {
-  console.log(`🚀 Multiplayer Metaverse server running on port ${PORT}`);
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 Multiplayer Metaverse server running on port ${PORT} (env: ${process.env.PORT || "not set"})`);
   console.log(`📡 Socket.IO server ready for avatar connections`);
   console.log(`🌐 Visit http://localhost:${PORT} for server stats`);
   console.log(`🏰 ${worldManager.getAllRooms().length} worlds initialized`);
