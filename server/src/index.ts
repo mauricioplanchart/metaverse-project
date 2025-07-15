@@ -21,14 +21,16 @@ const io = new Server(server, {
       "https://metaverse-project-1.netlify.app",
       "https://metaverse-project-1.onrender.com",
       "https://mverse9.netlify.app",
-      "https://metaverse-project-production.up.railway.app"
+      "https://metaverse-project-production.up.railway.app",
+      "https://metaverse-project-production-1.up.railway.app",
+      "https://*.netlify.app"
     ],
     methods: ["GET", "POST"],
     credentials: true
   }
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3001;
 
 // Middleware
 app.use(helmet());
