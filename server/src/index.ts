@@ -21,8 +21,7 @@ const io = new Server(server, {
       "https://metaverse-project-1.netlify.app",
       "https://metaverse-project-1.onrender.com",
       "https://mverse9.netlify.app",
-      "https://content-commitment-production.up.railway.app",
-      "https://content-commitment.up.railway.app"
+      "https://metaverse-project-production.up.railway.app"
     ],
     methods: ["GET", "POST"],
     credentials: true
