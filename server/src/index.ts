@@ -1877,3 +1877,4 @@ function addItemsToInventory(user: User, items: any[]) {
 function addXPToUser(userId: string, xp: number) {
   worldManager.addXP(userId, xp);
 }
+// Force rebuild Tue Jul 15 00:19:53 CST 2025
