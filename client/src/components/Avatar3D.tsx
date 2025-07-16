@@ -116,7 +116,7 @@ const Avatar3D: React.FC<Avatar3DProps> = ({ scene, position, username, avatarDa
 
     // Add accessories
     if (avatarData.accessories && avatarData.accessories.length > 0) {
-      avatarData.accessories.forEach((accessory: string, index: number) => {
+      avatarData.accessories.forEach((accessory: string) => {
         if (accessory === 'glasses') {
           const glasses = BABYLON.MeshBuilder.CreateTorus(`glasses_${username}`, {
             diameter: 0.15,
