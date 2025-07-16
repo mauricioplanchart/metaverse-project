@@ -3,6 +3,7 @@ import { useMetaverseStore } from '../stores/useMetaverseStore';
 import Avatar3D from './Avatar3D';
 import ProximityChat from './ProximityChat';
 import AvatarMovement from './AvatarMovement';
+import AvatarInteractions from './AvatarInteractions';
 
 // Import Babylon.js
 import * as BABYLON from '@babylonjs/core';
@@ -560,6 +561,15 @@ const BabylonSceneMultiplayer: React.FC = () => {
           <ProximityChat
             currentUserPosition={currentUserPosition}
             userAvatars={userAvatars}
+          />
+        )}
+        
+        {/* Avatar Interactions */}
+        {sceneRef.current && (
+          <AvatarInteractions
+            scene={sceneRef.current}
+            currentUserAvatar={userAvatars.find(avatar => avatar.isCurrentUser)}
+            nearbyAvatars={userAvatars.filter(avatar => !avatar.isCurrentUser)}
           />
         )}
         

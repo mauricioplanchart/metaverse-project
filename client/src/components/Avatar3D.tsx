@@ -153,53 +153,138 @@ const Avatar3D: React.FC<Avatar3DProps> = ({ scene, position, username, avatarDa
     usernamePlane.material = usernameMaterial;
     usernamePlane.parent = avatarGroup;
 
-    // Add emote indicator
+    // Add emote indicator with animations
     if (currentEmote && isCurrentUser) {
       const emoteTexture = new BABYLON.DynamicTexture(`emoteTexture_${username}`, {
         width: 256,
         height: 256
       }, scene);
-      emoteTexture.drawText(currentEmote, null, null, 'bold 32px Arial', 'yellow', 'transparent', true);
+      
+      // Enhanced emote display with different colors and effects
+      let emoteColor = 'yellow';
+      let emoteSize = 1;
+      
+      switch (currentEmote) {
+        case 'dance':
+          emoteColor = '#ff69b4';
+          emoteSize = 1.2;
+          break;
+        case 'wave':
+          emoteColor = '#00bfff';
+          emoteSize = 0.8;
+          break;
+        case 'jump':
+          emoteColor = '#00ff00';
+          emoteSize = 1.1;
+          break;
+        case 'laugh':
+          emoteColor = '#ffd700';
+          emoteSize = 1.3;
+          break;
+        default:
+          emoteColor = 'yellow';
+          emoteSize = 1;
+      }
+      
+      emoteTexture.drawText(currentEmote, null, null, 'bold 32px Arial', emoteColor, 'transparent', true);
 
       const emoteMaterial = new BABYLON.StandardMaterial(`emoteMat_${username}`, scene);
       emoteMaterial.diffuseTexture = emoteTexture;
       emoteMaterial.useAlphaFromDiffuseTexture = true;
 
       const emotePlane = BABYLON.MeshBuilder.CreatePlane(`emotePlane_${username}`, {
-        width: 1,
-        height: 1
+        width: emoteSize,
+        height: emoteSize
       }, scene);
       emotePlane.position.y = (avatarData.height || 1.0) / 2 + 1.0;
       emotePlane.material = emoteMaterial;
       emotePlane.parent = avatarGroup;
+      
+      // Add emote animation
+      const emoteAnimation = new BABYLON.Animation(
+        'emoteFloat',
+        'position.y',
+        30,
+        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+      );
+      
+      const emoteKeyFrames = [];
+      emoteKeyFrames.push({ frame: 0, value: emotePlane.position.y });
+      emoteKeyFrames.push({ frame: 15, value: emotePlane.position.y + 0.2 });
+      emoteKeyFrames.push({ frame: 30, value: emotePlane.position.y });
+      
+      emoteAnimation.setKeys(emoteKeyFrames);
+      scene.beginDirectAnimation(emotePlane, [emoteAnimation], 0, 30, true);
     }
 
-    // Add floating animation
-    const floatingAnimation = new BABYLON.Animation(
-      'floating',
-      'position.y',
-      30,
-      BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-      BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
-    );
+    // Create advanced avatar animations
+    const createWalkingAnimation = () => {
+      const walkAnimation = new BABYLON.Animation(
+        'walking',
+        'rotation.y',
+        30,
+        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+      );
 
-    const keyFrames = [];
-    keyFrames.push({
-      frame: 0,
-      value: avatarGroup.position.y
-    });
-    keyFrames.push({
-      frame: 30,
-      value: avatarGroup.position.y + 0.1
-    });
-    keyFrames.push({
-      frame: 60,
-      value: avatarGroup.position.y
-    });
+      const walkKeyFrames = [];
+      walkKeyFrames.push({ frame: 0, value: 0 });
+      walkKeyFrames.push({ frame: 15, value: 0.1 });
+      walkKeyFrames.push({ frame: 30, value: 0 });
+      walkKeyFrames.push({ frame: 45, value: -0.1 });
+      walkKeyFrames.push({ frame: 60, value: 0 });
 
-    floatingAnimation.setKeys(keyFrames);
-    avatarGroup.animations = [floatingAnimation];
-    scene.beginAnimation(avatarGroup, 0, 60, true, 1.0);
+      walkAnimation.setKeys(walkKeyFrames);
+      return walkAnimation;
+    };
+
+    const createIdleAnimation = () => {
+      const idleAnimation = new BABYLON.Animation(
+        'idle',
+        'position.y',
+        60,
+        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+      );
+
+      const idleKeyFrames = [];
+      idleKeyFrames.push({ frame: 0, value: avatarGroup.position.y });
+      idleKeyFrames.push({ frame: 30, value: avatarGroup.position.y + 0.02 });
+      idleKeyFrames.push({ frame: 60, value: avatarGroup.position.y });
+
+      idleAnimation.setKeys(idleKeyFrames);
+      return idleAnimation;
+    };
+
+    const createJumpAnimation = () => {
+      const jumpAnimation = new BABYLON.Animation(
+        'jump',
+        'position.y',
+        30,
+        BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+        BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+      );
+
+      const jumpKeyFrames = [];
+      jumpKeyFrames.push({ frame: 0, value: avatarGroup.position.y });
+      jumpKeyFrames.push({ frame: 15, value: avatarGroup.position.y + 0.5 });
+      jumpKeyFrames.push({ frame: 30, value: avatarGroup.position.y });
+
+      jumpAnimation.setKeys(jumpKeyFrames);
+      return jumpAnimation;
+    };
+
+    // Start with idle animation
+    const idleAnim = createIdleAnimation();
+    scene.beginDirectAnimation(avatarGroup, [idleAnim], 0, 60, true);
+
+    // Store animations for later use
+    (avatarGroup as any).avatarAnimations = {
+      idle: idleAnim,
+      walk: createWalkingAnimation(),
+      jump: createJumpAnimation()
+    };
 
     // Add particle effects for current user
     if (isCurrentUser) {
