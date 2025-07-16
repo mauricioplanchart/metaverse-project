@@ -1,0 +1,9 @@
+Asset Inventory for metaverse-project
+Generated: Tue Jul 15 19:03:26 CST 2025
+Backup Date: 20250715_190326
+
+ASSET SUMMARY:
+       0 total files
+  0B	assets/
+
+DETAILED LISTING:
