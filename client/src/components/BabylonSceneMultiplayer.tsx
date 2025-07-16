@@ -133,6 +133,14 @@ const BabylonSceneMultiplayer: React.FC = () => {
       }, scene);
       orangeCylinder.position.set(-2, 0.9, -2);
       console.log('🟠 Created orange cylinder at position:', orangeCylinder.position);
+      
+      // Create a pink pyramid (NEW OBJECT!)
+      const pinkPyramid = BABYLON.MeshBuilder.CreatePolyhedron('pinkPyramid', {
+        type: 1, // Tetrahedron (pyramid shape)
+        size: 0.8
+      }, scene);
+      pinkPyramid.position.set(4, 0.4, 1);
+      console.log('🩷 Created pink pyramid at position:', pinkPyramid.position);
 
       // Add materials and colors to all objects
       console.log('🎨 Applying materials to objects...');
@@ -178,6 +186,12 @@ const BabylonSceneMultiplayer: React.FC = () => {
       orangeCylinderMaterial.diffuseColor = new BABYLON.Color3(1, 0.6, 0.2);
       orangeCylinder.material = orangeCylinderMaterial;
       console.log('🟠 Applied orange material to cylinder');
+      
+      // Pink pyramid
+      const pinkPyramidMaterial = new BABYLON.StandardMaterial('pinkPyramidMat', scene);
+      pinkPyramidMaterial.diffuseColor = new BABYLON.Color3(1, 0.4, 0.8);
+      pinkPyramid.material = pinkPyramidMaterial;
+      console.log('🩷 Applied pink material to pyramid');
 
       // Add some visual interest for offline mode
       if (isOfflineMode) {
@@ -190,8 +204,9 @@ const BabylonSceneMultiplayer: React.FC = () => {
       console.log('  - 1 blue box (original)');
       console.log('  - 3 spheres (red, blue, purple)');
       console.log('  - 3 cylinders (green, yellow, orange)');
+      console.log('  - 1 pink pyramid (NEW!)');
       console.log('  - 1 ground plane');
-      console.log('  - Total: 8 objects in scene');
+      console.log('  - Total: 9 objects in scene');
 
       // Start render loop
       engine.runRenderLoop(() => {
