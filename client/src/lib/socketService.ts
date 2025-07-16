@@ -24,20 +24,27 @@ class SocketService {
           return;
         }
 
-        // Clean up existing socket
-        if (this.socket) {
-          this.socket.disconnect();
-          this.socket = null;
+        // If socket exists but not connected, wait a bit before cleanup
+        if (this.socket && !this.socket.connected) {
+          console.log('🔄 Socket exists but not connected, cleaning up...');
+          // Don't disconnect immediately - let it finish any pending operations
+          setTimeout(() => {
+            if (this.socket && !this.socket.connected) {
+              this.socket.disconnect();
+              this.socket = null;
+            }
+          }, 1000);
         }
 
         // Try connection with longer timeout
         this.socket = io(this.serverUrl, {
           transports: ['websocket', 'polling'],
           timeout: 30000, // Increased to 30 seconds
-          forceNew: true,
+          forceNew: false, // Changed to false to prevent premature closure
           reconnection: true,
           reconnectionAttempts: 5,
-          reconnectionDelay: 2000
+          reconnectionDelay: 2000,
+          autoConnect: true
         });
 
         const connectionTimeout = setTimeout(() => {
@@ -63,6 +70,7 @@ class SocketService {
             reject(new Error(`Failed to connect after ${this.maxAttempts} attempts: ${error.message}`));
           } else {
             console.log(`🔄 Retrying connection (${this.connectionAttempts}/${this.maxAttempts})...`);
+            // Don't reject here - let the reconnection logic handle it
           }
         });
 

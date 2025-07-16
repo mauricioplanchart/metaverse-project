@@ -151,63 +151,156 @@ const BabylonSceneMultiplayer: React.FC = () => {
       }, scene);
       box.position.y = 0.5;
 
-      // Add more 3D objects to make the scene interesting
-      console.log('🎨 Creating 3D objects...');
+      // 🎨 Creating expanded 3D world...
+      console.log('🎨 Creating expanded 3D world...');
       
-      // Create a red sphere
-      const redSphere = BABYLON.MeshBuilder.CreateSphere('redSphere', {
-        diameter: 0.8
-      }, scene);
-      redSphere.position.set(3, 0.4, 0);
-      console.log('🔴 Created red sphere at position:', redSphere.position);
+      // Create central plaza with fountain
+      const fountainBase = BABYLON.MeshBuilder.CreateCylinder('fountainBase', { height: 0.3, diameter: 2 }, scene);
+      fountainBase.position.set(0, 0.15, 0);
+      const fountainMaterial = new BABYLON.StandardMaterial('fountainMat', scene);
+      fountainMaterial.diffuseColor = new BABYLON.Color3(0.8, 0.8, 0.9);
+      fountainBase.material = fountainMaterial;
       
-      // Create a green cylinder
-      const greenCylinder = BABYLON.MeshBuilder.CreateCylinder('greenCylinder', {
-        height: 1.5,
-        diameter: 0.6
-      }, scene);
-      greenCylinder.position.set(-3, 0.75, 0);
-      console.log('🟢 Created green cylinder at position:', greenCylinder.position);
+      const fountainCenter = BABYLON.MeshBuilder.CreateCylinder('fountainCenter', { height: 1, diameter: 0.5 }, scene);
+      fountainCenter.position.set(0, 0.8, 0);
+      fountainCenter.material = fountainMaterial;
+      console.log('⛲ Created central fountain');
       
-      // Create a blue sphere
-      const blueSphere = BABYLON.MeshBuilder.CreateSphere('blueSphere', {
-        diameter: 0.6
-      }, scene);
-      blueSphere.position.set(0, 0.3, 3);
-      console.log('🔵 Created blue sphere at position:', blueSphere.position);
+      // Create buildings around the plaza
+      const createBuilding = (name: string, position: BABYLON.Vector3, color: BABYLON.Color3, size: number) => {
+        const building = BABYLON.MeshBuilder.CreateBox(name, { width: size, height: size * 2, depth: size }, scene);
+        building.position = position;
+        const buildingMaterial = new BABYLON.StandardMaterial(`${name}Mat`, scene);
+        buildingMaterial.diffuseColor = color;
+        building.material = buildingMaterial;
+        
+        // Add windows
+        const windowMaterial = new BABYLON.StandardMaterial(`${name}WindowMat`, scene);
+        windowMaterial.diffuseColor = new BABYLON.Color3(1, 1, 0.8);
+        windowMaterial.emissiveColor = new BABYLON.Color3(0.2, 0.2, 0.1);
+        
+        for (let i = 0; i < 3; i++) {
+          for (let j = 0; j < 2; j++) {
+            const window = BABYLON.MeshBuilder.CreatePlane(`${name}Window${i}${j}`, { width: 0.3, height: 0.4 }, scene);
+            window.position.set(
+              position.x + (i - 1) * 0.4,
+              position.y + j * 0.8 + 0.5,
+              position.z + size/2 + 0.01
+            );
+            window.material = windowMaterial;
+          }
+        }
+        return building;
+      };
       
-      // Create a yellow cylinder
-      const yellowCylinder = BABYLON.MeshBuilder.CreateCylinder('yellowCylinder', {
-        height: 1.2,
-        diameter: 0.4
-      }, scene);
-      yellowCylinder.position.set(0, 0.6, -3);
-      console.log('🟡 Created yellow cylinder at position:', yellowCylinder.position);
+      // Create buildings
+      createBuilding('building1', new BABYLON.Vector3(8, 1, 5), new BABYLON.Color3(0.7, 0.3, 0.3), 1.5);
+      createBuilding('building2', new BABYLON.Vector3(-8, 1, 5), new BABYLON.Color3(0.3, 0.7, 0.3), 1.5);
+      createBuilding('building3', new BABYLON.Vector3(8, 1, -5), new BABYLON.Color3(0.3, 0.3, 0.7), 1.5);
+      createBuilding('building4', new BABYLON.Vector3(-8, 1, -5), new BABYLON.Color3(0.7, 0.7, 0.3), 1.5);
+      console.log('🏢 Created 4 buildings around the plaza');
       
-      // Create a purple sphere
-      const purpleSphere = BABYLON.MeshBuilder.CreateSphere('purpleSphere', {
-        diameter: 0.7
-      }, scene);
-      purpleSphere.position.set(2, 0.35, 2);
-      console.log('🟣 Created purple sphere at position:', purpleSphere.position);
+      // Create trees
+      const createTree = (name: string, position: BABYLON.Vector3) => {
+        // Tree trunk
+        const trunk = BABYLON.MeshBuilder.CreateCylinder(`${name}Trunk`, { height: 2, diameter: 0.3 }, scene);
+        trunk.position = position;
+        const trunkMaterial = new BABYLON.StandardMaterial(`${name}TrunkMat`, scene);
+        trunkMaterial.diffuseColor = new BABYLON.Color3(0.4, 0.2, 0.1);
+        trunk.material = trunkMaterial;
+        
+        // Tree leaves
+        const leaves = BABYLON.MeshBuilder.CreateSphere(`${name}Leaves`, { diameter: 2 }, scene);
+        leaves.position.set(position.x, position.y + 1.5, position.z);
+        const leavesMaterial = new BABYLON.StandardMaterial(`${name}LeavesMat`, scene);
+        leavesMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.6, 0.1);
+        leaves.material = leavesMaterial;
+      };
       
-      // Create an orange cylinder
-      const orangeCylinder = BABYLON.MeshBuilder.CreateCylinder('orangeCylinder', {
-        height: 1.8,
-        diameter: 0.5
-      }, scene);
-      orangeCylinder.position.set(-2, 0.9, -2);
-      console.log('🟠 Created orange cylinder at position:', orangeCylinder.position);
+      // Create trees in a circle around the plaza
+      const treePositions = [
+        new BABYLON.Vector3(6, 0, 6),
+        new BABYLON.Vector3(-6, 0, 6),
+        new BABYLON.Vector3(6, 0, -6),
+        new BABYLON.Vector3(-6, 0, -6),
+        new BABYLON.Vector3(10, 0, 0),
+        new BABYLON.Vector3(-10, 0, 0),
+        new BABYLON.Vector3(0, 0, 10),
+        new BABYLON.Vector3(0, 0, -10)
+      ];
       
-      // Create a pink pyramid (NEW OBJECT!)
-      const pinkPyramid = BABYLON.MeshBuilder.CreatePolyhedron('pinkPyramid', {
-        type: 1, // Tetrahedron (pyramid shape)
-        size: 0.8
-      }, scene);
-      pinkPyramid.position.set(4, 0.4, 1);
-      console.log('🩷 Created pink pyramid at position:', pinkPyramid.position);
+      treePositions.forEach((pos, index) => {
+        createTree(`tree${index}`, pos);
+      });
+      console.log('🌳 Created 8 trees around the plaza');
+      
+      // Create decorative objects
+      const createDecorativeObject = (name: string, position: BABYLON.Vector3, type: string, color: BABYLON.Color3) => {
+        let mesh;
+        switch (type) {
+          case 'sphere':
+            mesh = BABYLON.MeshBuilder.CreateSphere(name, { diameter: 0.5 }, scene);
+            break;
+          case 'cylinder':
+            mesh = BABYLON.MeshBuilder.CreateCylinder(name, { height: 1, diameter: 0.4 }, scene);
+            break;
+          case 'cube':
+            mesh = BABYLON.MeshBuilder.CreateBox(name, { size: 0.6 }, scene);
+            break;
+          default:
+            mesh = BABYLON.MeshBuilder.CreateSphere(name, { diameter: 0.5 }, scene);
+        }
+        
+        mesh.position = position;
+        const material = new BABYLON.StandardMaterial(`${name}Mat`, scene);
+        material.diffuseColor = color;
+        mesh.material = material;
+        
+        // Add subtle rotation animation
+        const rotationAnimation = new BABYLON.Animation(
+          `${name}Rotation`,
+          'rotation.y',
+          30,
+          BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+          BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+        );
+        
+        const keyFrames = [];
+        keyFrames.push({ frame: 0, value: 0 });
+        keyFrames.push({ frame: 30, value: Math.PI * 2 });
+        rotationAnimation.setKeys(keyFrames);
+        
+        mesh.animations = [rotationAnimation];
+        scene.beginAnimation(mesh, 0, 30, true, 0.5);
+        
+        return mesh;
+      };
+      
+      // Create decorative objects
+      createDecorativeObject('deco1', new BABYLON.Vector3(4, 0.25, 4), 'sphere', new BABYLON.Color3(1, 0.5, 0));
+      createDecorativeObject('deco2', new BABYLON.Vector3(-4, 0.25, 4), 'cylinder', new BABYLON.Color3(0.5, 0, 1));
+      createDecorativeObject('deco3', new BABYLON.Vector3(4, 0.25, -4), 'cube', new BABYLON.Color3(1, 0, 0.5));
+      createDecorativeObject('deco4', new BABYLON.Vector3(-4, 0.25, -4), 'sphere', new BABYLON.Color3(0, 1, 0.5));
+      console.log('✨ Created 4 decorative rotating objects');
+      
+      // Create a bridge
+      const bridge = BABYLON.MeshBuilder.CreateBox('bridge', { width: 2, height: 0.2, depth: 8 }, scene);
+      bridge.position.set(0, 0.1, 15);
+      const bridgeMaterial = new BABYLON.StandardMaterial('bridgeMat', scene);
+      bridgeMaterial.diffuseColor = new BABYLON.Color3(0.6, 0.4, 0.2);
+      bridge.material = bridgeMaterial;
+      console.log('🌉 Created bridge to the north');
+      
+      // Create a small lake
+      const lake = BABYLON.MeshBuilder.CreateCylinder('lake', { height: 0.1, diameter: 6 }, scene);
+      lake.position.set(0, 0.05, -15);
+      const lakeMaterial = new BABYLON.StandardMaterial('lakeMat', scene);
+      lakeMaterial.alpha = 0.7;
+      lakeMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.4, 0.8);
+      lake.material = lakeMaterial;
+      console.log('🏞️ Created small lake to the south');
 
-      // Add materials and colors to all objects
+      // Add materials to the box (keeping the original box)
       console.log('🎨 Applying materials to objects...');
       
       // Blue box
@@ -215,48 +308,6 @@ const BabylonSceneMultiplayer: React.FC = () => {
       boxMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.6, 1);
       box.material = boxMaterial;
       console.log('🔵 Applied blue material to box');
-      
-      // Red sphere
-      const redSphereMaterial = new BABYLON.StandardMaterial('redSphereMat', scene);
-      redSphereMaterial.diffuseColor = new BABYLON.Color3(1, 0.2, 0.2);
-      redSphere.material = redSphereMaterial;
-      console.log('🔴 Applied red material to sphere');
-      
-      // Green cylinder
-      const greenCylinderMaterial = new BABYLON.StandardMaterial('greenCylinderMat', scene);
-      greenCylinderMaterial.diffuseColor = new BABYLON.Color3(0.2, 1, 0.2);
-      greenCylinder.material = greenCylinderMaterial;
-      console.log('🟢 Applied green material to cylinder');
-      
-      // Blue sphere
-      const blueSphereMaterial = new BABYLON.StandardMaterial('blueSphereMat', scene);
-      blueSphereMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.2, 1);
-      blueSphere.material = blueSphereMaterial;
-      console.log('🔵 Applied blue material to sphere');
-      
-      // Yellow cylinder
-      const yellowCylinderMaterial = new BABYLON.StandardMaterial('yellowCylinderMat', scene);
-      yellowCylinderMaterial.diffuseColor = new BABYLON.Color3(1, 1, 0.2);
-      yellowCylinder.material = yellowCylinderMaterial;
-      console.log('🟡 Applied yellow material to cylinder');
-      
-      // Purple sphere
-      const purpleSphereMaterial = new BABYLON.StandardMaterial('purpleSphereMat', scene);
-      purpleSphereMaterial.diffuseColor = new BABYLON.Color3(0.8, 0.2, 1);
-      purpleSphere.material = purpleSphereMaterial;
-      console.log('🟣 Applied purple material to sphere');
-      
-      // Orange cylinder
-      const orangeCylinderMaterial = new BABYLON.StandardMaterial('orangeCylinderMat', scene);
-      orangeCylinderMaterial.diffuseColor = new BABYLON.Color3(1, 0.6, 0.2);
-      orangeCylinder.material = orangeCylinderMaterial;
-      console.log('🟠 Applied orange material to cylinder');
-      
-      // Pink pyramid
-      const pinkPyramidMaterial = new BABYLON.StandardMaterial('pinkPyramidMat', scene);
-      pinkPyramidMaterial.diffuseColor = new BABYLON.Color3(1, 0.4, 0.8);
-      pinkPyramid.material = pinkPyramidMaterial;
-      console.log('🩷 Applied pink material to pyramid');
 
       // Add some visual interest for offline mode
       if (isOfflineMode) {
@@ -330,113 +381,64 @@ const BabylonSceneMultiplayer: React.FC = () => {
         console.log(`🎭 Added floating animation to ${object.name}`);
       };
 
-      // Create rotation animation
-      const createRotationAnimation = (object: BABYLON.Mesh, speed: number) => {
-        const animation = new BABYLON.Animation(
-          'rotation',
-          'rotation.y',
-          30,
-          BABYLON.Animation.ANIMATIONTYPE_FLOAT,
-          BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
-        );
-        
-        const keyFrames = [];
-        keyFrames.push({
-          frame: 0,
-          value: 0
-        });
-        keyFrames.push({
-          frame: 30,
-          value: Math.PI * 2
-        });
-        
-        animation.setKeys(keyFrames);
-        object.animations.push(animation);
-        
-        scene.beginAnimation(object, 0, 30, true, speed);
-        console.log(`🎭 Added rotation animation to ${object.name}`);
-      };
 
-      // Add animations to objects
-      createFloatingAnimation(redSphere, 0.3, 1.0);
-      createRotationAnimation(redSphere, 1.5);
-      
-      createFloatingAnimation(greenCylinder, 0.4, 1.2);
-      createRotationAnimation(greenCylinder, 1.0);
-      
-      createFloatingAnimation(blueSphere, 0.25, 0.8);
-      createRotationAnimation(blueSphere, 2.0);
-      
-      createFloatingAnimation(yellowCylinder, 0.35, 1.1);
-      createRotationAnimation(yellowCylinder, 1.3);
-      
-      createFloatingAnimation(purpleSphere, 0.28, 0.9);
-      createRotationAnimation(purpleSphere, 1.8);
-      
-      createFloatingAnimation(orangeCylinder, 0.45, 1.4);
-      createRotationAnimation(orangeCylinder, 0.7);
-      
-      createFloatingAnimation(pinkPyramid, 0.32, 1.3);
-      createRotationAnimation(pinkPyramid, 1.6);
 
-      // Add object-specific particle effects
-      const objects = [redSphere, greenCylinder, blueSphere, yellowCylinder, purpleSphere, orangeCylinder, pinkPyramid];
-      const colors = [
-        new BABYLON.Color3(1, 0.2, 0.2), // Red
-        new BABYLON.Color3(0.2, 1, 0.2), // Green
-        new BABYLON.Color3(0.2, 0.2, 1), // Blue
-        new BABYLON.Color3(1, 1, 0.2),   // Yellow
-        new BABYLON.Color3(0.8, 0.2, 1), // Purple
-        new BABYLON.Color3(1, 0.6, 0.2), // Orange
-        new BABYLON.Color3(1, 0.4, 0.8)  // Pink
-      ];
-
-      objects.forEach((object, index) => {
-        // Create particle system for each object
-        const objectParticles = new BABYLON.ParticleSystem(`objectParticles_${index}`, 100, scene);
-        objectParticles.particleTexture = new BABYLON.Texture('https://playground.babylonjs.com/textures/flare.png', scene);
-        
-        // Position particles around the object
-        objectParticles.emitter = object;
-        objectParticles.minEmitBox = new BABYLON.Vector3(-0.5, -0.5, -0.5);
-        objectParticles.maxEmitBox = new BABYLON.Vector3(0.5, 0.5, 0.5);
-        
-        // Color particles to match object
-        objectParticles.color1 = new BABYLON.Color4(colors[index].r, colors[index].g, colors[index].b, 1);
-        objectParticles.color2 = new BABYLON.Color4(colors[index].r * 0.8, colors[index].g * 0.8, colors[index].b * 0.8, 1);
-        objectParticles.colorDead = new BABYLON.Color4(0, 0, 0, 0);
-        
-        // Configure particle properties
-        objectParticles.minSize = 0.05;
-        objectParticles.maxSize = 0.15;
-        objectParticles.minLifeTime = 1;
-        objectParticles.maxLifeTime = 2;
-        objectParticles.emitRate = 20;
-        objectParticles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
-        objectParticles.gravity = new BABYLON.Vector3(0, 0.1, 0);
-        objectParticles.direction1 = new BABYLON.Vector3(-0.2, -0.2, -0.2);
-        objectParticles.direction2 = new BABYLON.Vector3(0.2, 0.2, 0.2);
-        objectParticles.minAngularSpeed = 0;
-        objectParticles.maxAngularSpeed = Math.PI;
-        objectParticles.minEmitPower = 0.1;
-        objectParticles.maxEmitPower = 0.2;
-        objectParticles.updateSpeed = 0.01;
-        
-        // Start the particle system
-        objectParticles.start();
-        console.log(`✨ Object ${index + 1} particle system started`);
-      });
+      // Add animations to new world objects
+      console.log('🎭 Adding animations to world objects...');
+      
+      // Add floating animation to fountain
+      createFloatingAnimation(fountainCenter, 0.2, 0.8);
+      
+      // Add rotation animation to decorative objects (they already have rotation from createDecorativeObject)
+      console.log('🎭 Decorative objects have built-in rotation animations');
+      
+      // Add some particle effects around the fountain
+      const fountainParticles = new BABYLON.ParticleSystem('fountainParticles', 200, scene);
+      fountainParticles.particleTexture = new BABYLON.Texture('https://playground.babylonjs.com/textures/flare.png', scene);
+      
+      // Position particles around the fountain
+      fountainParticles.emitter = fountainCenter;
+      fountainParticles.minEmitBox = new BABYLON.Vector3(-0.3, -0.3, -0.3);
+      fountainParticles.maxEmitBox = new BABYLON.Vector3(0.3, 0.3, 0.3);
+      
+      // Color particles to match fountain
+      fountainParticles.color1 = new BABYLON.Color4(0.8, 0.8, 1, 1);
+      fountainParticles.color2 = new BABYLON.Color4(0.6, 0.6, 0.9, 1);
+      fountainParticles.colorDead = new BABYLON.Color4(0, 0, 0, 0);
+      
+      // Configure particle properties
+      fountainParticles.minSize = 0.05;
+      fountainParticles.maxSize = 0.15;
+      fountainParticles.minLifeTime = 1;
+      fountainParticles.maxLifeTime = 2;
+             fountainParticles.emitRate = 30;
+       fountainParticles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
+       fountainParticles.gravity = new BABYLON.Vector3(0, 0.1, 0);
+       fountainParticles.direction1 = new BABYLON.Vector3(-0.2, -0.2, -0.2);
+       fountainParticles.direction2 = new BABYLON.Vector3(0.2, 0.2, 0.2);
+       fountainParticles.minAngularSpeed = 0;
+       fountainParticles.maxAngularSpeed = Math.PI;
+       fountainParticles.minEmitPower = 0.1;
+       fountainParticles.maxEmitPower = 0.2;
+       fountainParticles.updateSpeed = 0.01;
+       
+       // Start the particle system
+       fountainParticles.start();
+       console.log('✨ Fountain particle system started');
 
       // Log summary of all objects created
-      console.log('🎮 Scene objects summary:');
+      console.log('🎮 Expanded world summary:');
+      console.log('  - 1 central fountain with particles');
+      console.log('  - 4 buildings with windows');
+      console.log('  - 8 trees around the plaza');
+      console.log('  - 4 decorative rotating objects');
+      console.log('  - 1 bridge to the north');
+      console.log('  - 1 small lake to the south');
       console.log('  - 1 blue box (original)');
-      console.log('  - 3 spheres (red, blue, purple)');
-      console.log('  - 3 cylinders (green, yellow, orange)');
-      console.log('  - 1 pink pyramid (NEW!)');
       console.log('  - 1 ground plane');
       console.log('  - 1 ambient particle system');
-      console.log('  - 7 object-specific particle systems');
-      console.log('  - Total: 9 objects + 8 particle systems in scene');
+      console.log('  - 1 fountain particle system');
+      console.log('  - Total: 20+ objects in expanded world');
 
       // 🎭 ADD REAL USER AVATARS 🎭
       console.log('🎭 Setting up real user avatar system...');
@@ -616,20 +618,13 @@ const BabylonSceneMultiplayer: React.FC = () => {
                 fontSize: '12px',
                 zIndex: 999
               }}>
-                🧪 Movement Test Area
+                �� Movement Test Area - If you see this, AvatarMovement should render below
               </div>
               
               <AvatarMovement
-                scene={sceneRef.current || ({} as any)}
-                camera={camera || ({} as any)}
-                currentUserAvatar={userAvatars.find(avatar => avatar.isCurrentUser) || {
-                  userId: currentUserId,
-                  username: `Player_${currentUserId}`,
-                  position: currentUserPosition,
-                  avatarData: avatarCustomization,
-                  isCurrentUser: true,
-                  mesh: null
-                }}
+                scene={sceneRef.current || undefined}
+                camera={camera || undefined}
+                currentUserAvatar={userAvatars.find(avatar => avatar.isCurrentUser)}
               />
             </div>
           );

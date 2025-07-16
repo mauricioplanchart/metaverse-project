@@ -59,16 +59,24 @@ const App: React.FC = () => {
     }
     
     let connectionTimeout: NodeJS.Timeout;
+    let isConnecting = false;
     
     const initializeConnection = async () => {
+      if (isConnecting) {
+        console.log('🔄 Connection already in progress, skipping...');
+        return;
+      }
+      
       try {
         console.log('🚀 Starting connection attempt...');
+        isConnecting = true;
         setIsInitialized(true);
         
         // Set a timeout for the entire connection process
         connectionTimeout = setTimeout(() => {
           console.error('⏰ Connection process timeout');
           setConnectionError('Connection timeout - server may be unavailable');
+          isConnecting = false;
         }, 15000);
         
         await socketService.connect()
@@ -89,13 +97,26 @@ const App: React.FC = () => {
         })
         
         clearTimeout(connectionTimeout);
+        isConnecting = false;
       } catch (error) {
         console.error('❌ Failed to connect:', error)
         clearTimeout(connectionTimeout);
         setConnectionError(`Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
         setIsInitialized(false); // Allow retry
+        isConnecting = false;
       }
     }
+
+    // Start the connection process
+    initializeConnection();
+
+    // Cleanup function
+    return () => {
+      console.log('🧹 Cleaning up connection...');
+      clearTimeout(connectionTimeout);
+      isConnecting = false;
+      // Don't disconnect here - let the socket service handle reconnection
+    };
 
     const setupSocketListeners = () => {
       // Connection events
