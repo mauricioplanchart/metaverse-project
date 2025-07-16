@@ -7,6 +7,7 @@ import { useMetaverseStore } from './stores/useMetaverseStore'
 import { socketService } from './lib/socketService'
 import { AvatarCustomizer } from './components/AvatarCustomizer'
 import ErrorBoundary from './components/ErrorBoundary'
+import UserConnectionStatus from './components/UserConnectionStatus'
 
 const App: React.FC = () => {
   const [connectionError, setConnectionError] = useState<string | null>(null)
@@ -141,6 +142,27 @@ const App: React.FC = () => {
         updateUser(data.userId, {
           position: data.position,
           rotation: data.rotation
+        })
+      })
+
+      // Avatar events
+      socketService.on('avatar-updated', (data: any) => {
+        console.log('🎭 Avatar updated:', data)
+        updateUser(data.userId, {
+          avatarCustomization: data.avatarCustomization
+        })
+      })
+
+      socketService.on('emote-performed', (data: any) => {
+        console.log('😊 Emote performed:', data)
+        // TODO: Handle emote updates properly
+        addChatMessage({
+          id: `emote_${Date.now()}`,
+          userId: data.userId,
+          username: data.username || 'Unknown',
+          message: `😊 ${data.emote}`,
+          timestamp: Date.now(),
+          type: 'action'
         })
       })
 
@@ -528,6 +550,9 @@ const App: React.FC = () => {
             )
           }
         })()}
+        
+        {/* User Connection Status */}
+        {!showCustomizer && <UserConnectionStatus />}
         {/* Chat Overlay */}
         {!showCustomizer && (() => {
           try {

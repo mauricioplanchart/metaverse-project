@@ -9,11 +9,17 @@ const BabylonSceneMultiplayer: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<BABYLON.Engine | null>(null);
   const sceneRef = useRef<BABYLON.Scene | null>(null);
-  const { isConnected } = useMetaverseStore();
+  const { 
+    isConnected, 
+    currentUser, 
+    onlineUsers, 
+    currentUserId,
+    avatarCustomization 
+  } = useMetaverseStore();
   const [error, setError] = useState<string | null>(null);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
-  const [sampleAvatars, setSampleAvatars] = useState<any[]>([]);
+  const [userAvatars, setUserAvatars] = useState<any[]>([]);
 
   // Debug logging
   console.log('🎮 BabylonSceneMultiplayer render v3:', { isConnected, error, isOfflineMode });
@@ -407,49 +413,36 @@ const BabylonSceneMultiplayer: React.FC = () => {
       console.log('  - 7 object-specific particle systems');
       console.log('  - Total: 9 objects + 8 particle systems in scene');
 
-      // 🎭 ADD 3D AVATARS 🎭
-      console.log('🎭 Adding 3D avatars to scene...');
+      // 🎭 ADD REAL USER AVATARS 🎭
+      console.log('🎭 Setting up real user avatar system...');
       
-      // Create sample avatars for demonstration
-      const sampleAvatars = [
-        {
-          username: 'Player_1',
-          position: new BABYLON.Vector3(2, 0, 2),
-          avatarData: {
-            bodyColor: '#ffcc99',
-            headColor: '#ffe0bd',
-            clothingColor: '#3366ff',
-            hairColor: '#000000',
-            hairStyle: 'short',
-            height: 1.0,
-            clothingType: 'shirt',
-            accessories: ['glasses']
-          }
-        },
-        {
-          username: 'Player_2', 
-          position: new BABYLON.Vector3(-2, 0, -2),
-          avatarData: {
-            bodyColor: '#ffe0bd',
-            headColor: '#ffcc99',
-            clothingColor: '#ff69b4',
-            hairColor: '#8B4513',
-            hairStyle: 'long',
-            height: 1.1,
-            clothingType: 'dress',
-            accessories: ['hat']
-          }
-        }
-      ];
-
-      // Render sample avatars
-      sampleAvatars.forEach((avatar, index) => {
-        console.log(`🎭 Creating sample avatar ${index + 1}:`, avatar.username);
-        // Avatar3D component will be rendered by React, not directly in Babylon
-      });
-
-      // Store avatar data for React rendering
-      setSampleAvatars(sampleAvatars);
+      // Create initial user avatars from online users
+      const createUserAvatars = () => {
+        const avatars = onlineUsers.map((user, index) => {
+          // Generate random position for each user
+          const angle = (index / onlineUsers.length) * Math.PI * 2;
+          const radius = 3 + Math.random() * 2;
+          const position = new BABYLON.Vector3(
+            Math.cos(angle) * radius,
+            0,
+            Math.sin(angle) * radius
+          );
+          
+          return {
+            userId: user.id,
+            username: user.username || `Player_${user.id}`,
+            position: position,
+            avatarData: user.avatarCustomization || avatarCustomization,
+            isCurrentUser: user.id === currentUserId
+          };
+        });
+        
+        console.log('🎭 Created avatars for users:', avatars.map(a => a.username));
+        setUserAvatars(avatars);
+      };
+      
+      // Initialize user avatars
+      createUserAvatars();
 
       // Start render loop
       engine.runRenderLoop(() => {
@@ -474,6 +467,34 @@ const BabylonSceneMultiplayer: React.FC = () => {
       setError('Failed to initialize 3D scene');
     }
   }, []); // Empty dependency array - only run once
+
+  // Update user avatars when online users change
+  useEffect(() => {
+    if (onlineUsers.length > 0) {
+      console.log('👥 Online users updated:', onlineUsers.length, 'users');
+      const avatars = onlineUsers.map((user, index) => {
+        // Generate random position for each user
+        const angle = (index / onlineUsers.length) * Math.PI * 2;
+        const radius = 3 + Math.random() * 2;
+        const position = new BABYLON.Vector3(
+          Math.cos(angle) * radius,
+          0,
+          Math.sin(angle) * radius
+        );
+        
+        return {
+          userId: user.id,
+          username: user.username || `Player_${user.id}`,
+          position: position,
+          avatarData: user.avatarCustomization || avatarCustomization,
+          isCurrentUser: user.id === currentUserId
+        };
+      });
+      
+      console.log('🎭 Updated avatars for users:', avatars.map(a => a.username));
+      setUserAvatars(avatars);
+    }
+  }, [onlineUsers, currentUserId, avatarCustomization]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -517,15 +538,15 @@ const BabylonSceneMultiplayer: React.FC = () => {
         style={{ outline: 'none' }}
       />
       
-      {/* Render 3D Avatars */}
-      {sceneRef.current && sampleAvatars.map((avatar, index) => (
+      {/* Render Real User Avatars */}
+      {sceneRef.current && userAvatars.map((avatar: any, index: number) => (
         <Avatar3D
-          key={`avatar-${index}`}
+          key={`avatar-${avatar.userId}`}
           scene={sceneRef.current!}
           position={avatar.position}
           username={avatar.username}
           avatarData={avatar.avatarData}
-          isCurrentUser={index === 0} // First avatar is current user for demo
+          isCurrentUser={avatar.isCurrentUser}
         />
       ))}
       {isOfflineMode && (
