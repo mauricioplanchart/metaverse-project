@@ -49,7 +49,7 @@ const UserConnectionStatus: React.FC = () => {
           <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>
             👥 Connected Users:
           </div>
-          {onlineUsers.map((user, index) => (
+          {onlineUsers.map((user) => (
             <div 
               key={user.id} 
               style={{ 

@@ -11,7 +11,6 @@ const BabylonSceneMultiplayer: React.FC = () => {
   const sceneRef = useRef<BABYLON.Scene | null>(null);
   const { 
     isConnected, 
-    currentUser, 
     onlineUsers, 
     currentUserId,
     avatarCustomization 
@@ -539,7 +538,7 @@ const BabylonSceneMultiplayer: React.FC = () => {
       />
       
       {/* Render Real User Avatars */}
-      {sceneRef.current && userAvatars.map((avatar: any, index: number) => (
+      {sceneRef.current && userAvatars.map((avatar: any) => (
         <Avatar3D
           key={`avatar-${avatar.userId}`}
           scene={sceneRef.current!}
