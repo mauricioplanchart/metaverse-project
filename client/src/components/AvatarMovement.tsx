@@ -29,16 +29,40 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
     isMoving
   });
 
-  useEffect(() => {
-    if (!scene || !camera || !currentUserAvatar) {
-      console.log('🚶 AvatarMovement: Missing required props:', { 
-        hasScene: !!scene, 
-        hasCamera: !!camera, 
-        hasAvatar: !!currentUserAvatar 
-      });
-      return;
-    }
+  // Always render something, even if props are missing
+  if (!scene || !camera || !currentUserAvatar) {
+    return (
+      <div style={{
+        position: 'absolute',
+        bottom: '20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        backgroundColor: 'rgba(255, 0, 0, 0.9)',
+        color: 'white',
+        padding: '12px',
+        borderRadius: '8px',
+        fontSize: '12px',
+        fontFamily: 'monospace',
+        zIndex: 1000,
+        border: '2px solid #ff0000'
+      }}>
+        <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>
+          🚫 Avatar Movement - Missing Props
+        </div>
+        <div style={{ fontSize: '10px', opacity: 0.7 }}>
+          Scene: {scene ? '✅' : '❌'}
+        </div>
+        <div style={{ fontSize: '10px', opacity: 0.7 }}>
+          Camera: {camera ? '✅' : '❌'}
+        </div>
+        <div style={{ fontSize: '10px', opacity: 0.7 }}>
+          Avatar: {currentUserAvatar ? '✅' : '❌'}
+        </div>
+      </div>
+    );
+  }
 
+  useEffect(() => {
     console.log('🚶 AvatarMovement: Initializing movement system for user:', currentUserAvatar.username);
 
     // Handle keyboard input

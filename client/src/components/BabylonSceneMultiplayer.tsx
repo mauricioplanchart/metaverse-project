@@ -574,18 +574,36 @@ const BabylonSceneMultiplayer: React.FC = () => {
           });
           
           return (
-            <AvatarMovement
-              scene={sceneRef.current || ({} as any)}
-              camera={camera || ({} as any)}
-              currentUserAvatar={userAvatars.find(avatar => avatar.isCurrentUser) || {
-                userId: currentUserId,
-                username: `Player_${currentUserId}`,
-                position: currentUserPosition,
-                avatarData: avatarCustomization,
-                isCurrentUser: true,
-                mesh: null
-              }}
-            />
+            <div>
+              {/* Test div to verify this area renders */}
+              <div style={{
+                position: 'absolute',
+                bottom: '200px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                backgroundColor: 'red',
+                color: 'white',
+                padding: '8px',
+                borderRadius: '4px',
+                fontSize: '12px',
+                zIndex: 999
+              }}>
+                🧪 Movement Test Area
+              </div>
+              
+              <AvatarMovement
+                scene={sceneRef.current || ({} as any)}
+                camera={camera || ({} as any)}
+                currentUserAvatar={userAvatars.find(avatar => avatar.isCurrentUser) || {
+                  userId: currentUserId,
+                  username: `Player_${currentUserId}`,
+                  position: currentUserPosition,
+                  avatarData: avatarCustomization,
+                  isCurrentUser: true,
+                  mesh: null
+                }}
+              />
+            </div>
           );
         })()}
       {isOfflineMode && (
