@@ -3,7 +3,7 @@
   command = "npm run build"
 
 [build.environment]
-  VITE_SERVER_URL = "https://metaverse-backend.onrender.com"
+  VITE_SERVER_URL = "https://metaverse-project-3.onrender.com"
   VITE_APP_NAME = "Metaverse"
   VITE_APP_VERSION = "2.0.0"
   NODE_ENV = "production"
@@ -30,13 +30,13 @@
 
 # Environment-specific configurations
 [context.production.environment]
-  VITE_SERVER_URL = "https://metaverse-backend.onrender.com"
+  VITE_SERVER_URL = "https://metaverse-project-3.onrender.com"
   VITE_ENVIRONMENT = "production"
 
-[context.staging.environment]
-  VITE_SERVER_URL = "https://metaverse-backend-staging.onrender.com"
-  VITE_ENVIRONMENT = "staging"
-
 [context.deploy-preview.environment]
-  VITE_SERVER_URL = "https://metaverse-backend-dev.onrender.com"
-  VITE_ENVIRONMENT = "preview" 
+  VITE_SERVER_URL = "https://metaverse-project-3.onrender.com"
+  VITE_ENVIRONMENT = "preview"
+
+[context.branch-deploy.environment]
+  VITE_SERVER_URL = "https://metaverse-project-3.onrender.com"
+  VITE_ENVIRONMENT = "development" 
