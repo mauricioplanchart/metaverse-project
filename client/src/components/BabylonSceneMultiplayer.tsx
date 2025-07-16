@@ -21,7 +21,7 @@ const BabylonSceneMultiplayer: React.FC = () => {
   const [isOfflineMode, setIsOfflineMode] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [userAvatars, setUserAvatars] = useState<any[]>([]);
-  const [currentUserPosition, setCurrentUserPosition] = useState<BABYLON.Vector3>(new BABYLON.Vector3(0, 0, 0));
+  const [currentUserPosition] = useState<BABYLON.Vector3>(new BABYLON.Vector3(0, 0, 0));
   const [camera, setCamera] = useState<BABYLON.Camera | null>(null);
 
   // Debug logging
@@ -557,7 +557,6 @@ const BabylonSceneMultiplayer: React.FC = () => {
         {/* Proximity Chat System */}
         {sceneRef.current && (
           <ProximityChat
-            scene={sceneRef.current}
             currentUserPosition={currentUserPosition}
             userAvatars={userAvatars}
           />
