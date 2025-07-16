@@ -28,7 +28,9 @@ export const getServerUrl = () => {
     PROD: import.meta.env.PROD,
     NODE_ENV: import.meta.env.NODE_ENV,
     location: window.location.hostname,
-    isLocalhost: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    isLocalhost: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1',
+    fullLocation: window.location.href,
+    port: window.location.port
   });
   
   // If we have an environment variable, use it

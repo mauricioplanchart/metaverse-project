@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Config Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .debug { background: #f0f0f0; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #007acc; }
+        .error { color: #d32f2f; border-left-color: #d32f2f; }
+        .success { color: #388e3c; border-left-color: #388e3c; }
+        .warning { color: #f57c00; border-left-color: #f57c00; }
+        button { background: #007acc; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #005a9e; }
+        .result { margin-top: 20px; padding: 15px; background: #e8f5e8; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Configuration Debug</h1>
+        <p>This page tests the server URL configuration logic.</p>
+        
+        <button onclick="testConfig()">Test Configuration</button>
+        <button onclick="testSocketConnection()">Test Socket Connection</button>
+        <button onclick="clearCache()">Clear Cache & Reload</button>
+        
+        <div id="results"></div>
+    </div>
+    
+    <script type="module">
+        // Simulate the config logic
+        function log(message, type = 'debug') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            results.appendChild(div);
+        }
+        
+        function testConfig() {
+            log('🧪 Testing configuration...', 'debug');
+            
+            // Simulate environment variables
+            const env = {
+                VITE_SERVER_URL: null, // No environment variable set
+                DEV: true,
+                PROD: false,
+                NODE_ENV: 'development'
+            };
+            
+            log(`📍 Current location: ${window.location.href}`, 'debug');
+            log(`🏠 Hostname: ${window.location.hostname}`, 'debug');
+            log(`🔢 Port: ${window.location.port}`, 'debug');
+            
+            // Test the logic
+            const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            log(`🏠 Is localhost: ${isLocalhost}`, isLocalhost ? 'success' : 'warning');
+            
+            const isNetlify = window.location.hostname.includes('netlify.app') || 
+                             window.location.hostname.includes('metaverse-project');
+            log(`🌐 Is Netlify: ${isNetlify}`, isNetlify ? 'warning' : 'success');
+            
+            // Determine URL
+            let serverUrl;
+            if (env.VITE_SERVER_URL) {
+                serverUrl = env.VITE_SERVER_URL;
+                log(`🌐 Using environment URL: ${serverUrl}`, 'warning');
+            } else if (isLocalhost) {
+                serverUrl = 'http://localhost:3001';
+                log(`🏠 Localhost detected: Using ${serverUrl}`, 'success');
+            } else if (isNetlify) {
+                serverUrl = 'https://metaverse-project-2.onrender.com';
+                log(`🌐 Production/Netlify: Using ${serverUrl}`, 'warning');
+            } else {
+                serverUrl = 'http://localhost:3001';
+                log(`🏠 Default: Using ${serverUrl}`, 'success');
+            }
+            
+            log(`🎯 Final server URL: ${serverUrl}`, 'success');
+            
+            // Test if server is reachable
+            testServerAvailability(serverUrl);
+        }
+        
+        async function testServerAvailability(url) {
+            try {
+                log(`🔍 Testing server availability: ${url}`, 'debug');
+                const response = await fetch(url, { 
+                    method: 'GET',
+                    mode: 'cors',
+                    cache: 'no-cache'
+                });
+                
+                if (response.ok) {
+                    log(`✅ Server is reachable: ${url}`, 'success');
+                } else {
+                    log(`⚠️ Server responded with status: ${response.status}`, 'warning');
+                }
+            } catch (error) {
+                log(`❌ Server test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function testSocketConnection() {
+            log('🔌 Testing Socket.IO connection...', 'debug');
+            
+            // Import Socket.IO client dynamically
+            import('https://cdn.socket.io/4.7.4/socket.io.esm.min.js')
+                .then(({ io }) => {
+                    const socket = io('http://localhost:3001', {
+                        transports: ['websocket', 'polling'],
+                        timeout: 5000,
+                        forceNew: true
+                    });
+                    
+                    socket.on('connect', () => {
+                        log('✅ Socket.IO connected successfully!', 'success');
+                        socket.disconnect();
+                    });
+                    
+                    socket.on('connect_error', (error) => {
+                        log(`❌ Socket.IO connection failed: ${error.message}`, 'error');
+                    });
+                    
+                    socket.on('disconnect', () => {
+                        log('🔌 Socket.IO disconnected', 'debug');
+                    });
+                    
+                    // Timeout after 10 seconds
+                    setTimeout(() => {
+                        if (socket.connected) {
+                            socket.disconnect();
+                        } else {
+                            log('⏰ Socket.IO connection timeout', 'warning');
+                        }
+                    }, 10000);
+                })
+                .catch(error => {
+                    log(`❌ Failed to load Socket.IO: ${error.message}`, 'error');
+                });
+        }
+        
+        function clearCache() {
+            log('🧹 Clearing cache and reloading...', 'debug');
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => {
+                        caches.delete(name);
+                    });
+                    log('✅ Cache cleared', 'success');
+                });
+            }
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 1000);
+        }
+        
+        // Auto-run test on page load
+        window.addEventListener('load', () => {
+            log('🚀 Page loaded, running config test...', 'debug');
+            setTimeout(testConfig, 500);
+        });
+    </script>
+</body>
+</html> 

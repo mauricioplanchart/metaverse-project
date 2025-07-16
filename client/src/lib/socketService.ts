@@ -56,7 +56,7 @@ class SocketService {
         
         this.socket = io(this.serverUrl, {
           transports: isProduction ? ['polling'] : ['websocket', 'polling'], // Force polling for production to avoid CORS issues
-          timeout: 15000, // Increased timeout for production
+          timeout: 20000, // Increased timeout for production
           forceNew: true, // Force new connection
           reconnection: false, // Disable auto-reconnection to handle manually
           autoConnect: true,
@@ -64,7 +64,8 @@ class SocketService {
           rememberUpgrade: false,
           secure: isProduction, // Enable secure for production
           rejectUnauthorized: false, // Allow self-signed certificates
-          withCredentials: false // Disable credentials for cross-origin
+          withCredentials: false, // Disable credentials for cross-origin
+          path: '/socket.io/' // Explicit path for Socket.IO
         });
 
         const connectionTimeout = setTimeout(() => {

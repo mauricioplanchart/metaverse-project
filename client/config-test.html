@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Config Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Configuration Test</h1>
+    <div id="debug"></div>
+    
+    <script type="module">
+        // Simulate the config logic
+        const debug = document.getElementById('debug');
+        
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = message;
+            debug.appendChild(div);
+        }
+        
+        log('🔧 Testing configuration logic...');
+        
+        // Simulate environment variables
+        const env = {
+            VITE_SERVER_URL: null, // No environment variable set
+            DEV: true,
+            PROD: false,
+            NODE_ENV: 'development'
+        };
+        
+        log(`Environment: DEV=${env.DEV}, PROD=${env.PROD}, NODE_ENV=${env.NODE_ENV}`);
+        log(`Location: ${window.location.href}`);
+        log(`Hostname: ${window.location.hostname}`);
+        log(`Port: ${window.location.port}`);
+        
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        log(`Is localhost: ${isLocalhost}`);
+        
+        const isNetlify = window.location.hostname.includes('netlify.app') || 
+                         window.location.hostname.includes('metaverse-project');
+        log(`Is Netlify: ${isNetlify}`);
+        
+        // Determine server URL
+        let serverUrl;
+        if (env.VITE_SERVER_URL) {
+            serverUrl = env.VITE_SERVER_URL;
+            log(`🌐 Using environment URL: ${serverUrl}`, 'success');
+        } else if (isLocalhost) {
+            serverUrl = 'http://localhost:3001';
+            log(`🏠 Localhost detected: Using ${serverUrl}`, 'success');
+        } else if (isNetlify) {
+            serverUrl = 'https://metaverse-project-2.onrender.com';
+            log(`🌐 Production/Netlify: Using ${serverUrl}`, 'success');
+        } else {
+            serverUrl = 'http://localhost:3001';
+            log(`🏠 Default: Using ${serverUrl}`, 'success');
+        }
+        
+        log(`Final server URL: ${serverUrl}`, 'success');
+        
+        // Test connection
+        log('Testing connection...');
+        fetch(serverUrl, { 
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache'
+        })
+        .then(response => {
+            if (response.ok) {
+                log(`✅ Server is reachable at ${serverUrl}`, 'success');
+            } else {
+                log(`⚠️ Server responded with status ${response.status}`, 'error');
+            }
+        })
+        .catch(error => {
+            log(`❌ Cannot reach server at ${serverUrl}: ${error.message}`, 'error');
+        });
+    </script>
+</body>
+</html> 
