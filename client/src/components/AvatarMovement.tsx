@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useMetaverseStore } from '../stores/useMetaverseStore';
 import { socketService } from '../lib/socketService';
 import * as BABYLON from '@babylonjs/core';
@@ -18,6 +18,16 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
   const [position, setPosition] = useState<BABYLON.Vector3>(new BABYLON.Vector3(0, 0, 0));
   const [isMoving, setIsMoving] = useState(false);
   const [movementSpeed] = useState(0.1);
+  const keysRef = useRef<{ [key: string]: boolean }>({});
+
+  // Debug render
+  console.log('🚶 AvatarMovement render:', { 
+    hasScene: !!scene, 
+    hasCamera: !!camera, 
+    hasAvatar: !!currentUserAvatar,
+    position: position.toString(),
+    isMoving
+  });
 
   useEffect(() => {
     if (!scene || !camera || !currentUserAvatar) {
@@ -31,18 +41,22 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
 
     console.log('🚶 AvatarMovement: Initializing movement system for user:', currentUserAvatar.username);
 
-    const keys: { [key: string]: boolean } = {};
-
     // Handle keyboard input
     const handleKeyDown = (event: KeyboardEvent) => {
-      keys[event.key.toLowerCase()] = true;
+      const key = event.key.toLowerCase();
+      keysRef.current[key] = true;
       setIsMoving(true);
-      console.log('🚶 Key pressed:', event.key.toLowerCase());
+      console.log('🚶 Key pressed:', key, 'Keys state:', keysRef.current);
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
-      keys[event.key.toLowerCase()] = false;
-      setIsMoving(false);
+      const key = event.key.toLowerCase();
+      keysRef.current[key] = false;
+      
+      // Check if any movement keys are still pressed
+      const movementKeys = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
+      const anyKeyPressed = movementKeys.some(k => keysRef.current[k]);
+      setIsMoving(anyKeyPressed);
     };
 
     window.addEventListener('keydown', handleKeyDown);
@@ -54,19 +68,19 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
       const newPosition = position.clone();
 
       // WASD movement
-      if (keys['w'] || keys['arrowup']) {
+      if (keysRef.current['w'] || keysRef.current['arrowup']) {
         newPosition.z -= movementSpeed;
         moved = true;
       }
-      if (keys['s'] || keys['arrowdown']) {
+      if (keysRef.current['s'] || keysRef.current['arrowdown']) {
         newPosition.z += movementSpeed;
         moved = true;
       }
-      if (keys['a'] || keys['arrowleft']) {
+      if (keysRef.current['a'] || keysRef.current['arrowleft']) {
         newPosition.x -= movementSpeed;
         moved = true;
       }
-      if (keys['d'] || keys['arrowright']) {
+      if (keysRef.current['d'] || keysRef.current['arrowright']) {
         newPosition.x += movementSpeed;
         moved = true;
       }
@@ -97,7 +111,7 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
       window.removeEventListener('keyup', handleKeyUp);
       clearInterval(interval);
     };
-  }, [scene, camera, currentUserAvatar, position, movementSpeed, currentUserId]);
+  }, [scene, camera, currentUserAvatar, movementSpeed, currentUserId]); // Removed position from dependencies
 
   // Handle server position updates
   useEffect(() => {
@@ -113,6 +127,13 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
       socketService.off('avatar-moved', handleAvatarMove);
     };
   }, [currentUserId]);
+
+  const testMovement = () => {
+    const newPosition = position.clone();
+    newPosition.x += 1;
+    setPosition(newPosition);
+    console.log('🚶 Test movement to:', newPosition);
+  };
 
   return (
     <div style={{
@@ -139,6 +160,22 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
       </div>
       <div style={{ marginBottom: '4px', fontSize: '10px', opacity: 0.7 }}>
         System: {scene && camera && currentUserAvatar ? '🟢 Active' : '🔴 Inactive'}
+      </div>
+      <div style={{ marginBottom: '8px' }}>
+        <button 
+          onClick={testMovement}
+          style={{
+            padding: '4px 8px',
+            backgroundColor: '#4CAF50',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            fontSize: '10px',
+            cursor: 'pointer'
+          }}
+        >
+          Test Move
+        </button>
       </div>
       <div style={{ fontSize: '10px', opacity: 0.7 }}>
         Use WASD or Arrow Keys to move
