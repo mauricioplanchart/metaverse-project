@@ -50,4 +50,4 @@ export const getServerUrl = () => {
   // In development, use localhost
   console.log('🏠 Development: Using localhost URL');
   return 'http://localhost:3001';
-}; 
+}; // Staging test - Tue Jul 15 18:39:06 CST 2025
