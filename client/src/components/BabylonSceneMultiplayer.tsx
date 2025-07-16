@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useMetaverseStore } from '../stores/useMetaverseStore';
 import Avatar3D from './Avatar3D';
+import ProximityChat from './ProximityChat';
+import AvatarMovement from './AvatarMovement';
 
 // Import Babylon.js
 import * as BABYLON from '@babylonjs/core';
@@ -19,6 +21,8 @@ const BabylonSceneMultiplayer: React.FC = () => {
   const [isOfflineMode, setIsOfflineMode] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [userAvatars, setUserAvatars] = useState<any[]>([]);
+  const [currentUserPosition, setCurrentUserPosition] = useState<BABYLON.Vector3>(new BABYLON.Vector3(0, 0, 0));
+  const [camera, setCamera] = useState<BABYLON.Camera | null>(null);
 
   // Debug logging
   console.log('🎮 BabylonSceneMultiplayer render v3:', { isConnected, error, isOfflineMode });
@@ -73,6 +77,7 @@ const BabylonSceneMultiplayer: React.FC = () => {
         scene
       );
       camera.attachControl(canvasRef.current, true);
+      setCamera(camera);
 
       // Create light
       new BABYLON.HemisphericLight(
@@ -537,17 +542,35 @@ const BabylonSceneMultiplayer: React.FC = () => {
         style={{ outline: 'none' }}
       />
       
-      {/* Render Real User Avatars */}
-      {sceneRef.current && userAvatars.map((avatar: any) => (
-        <Avatar3D
-          key={`avatar-${avatar.userId}`}
-          scene={sceneRef.current!}
-          position={avatar.position}
-          username={avatar.username}
-          avatarData={avatar.avatarData}
-          isCurrentUser={avatar.isCurrentUser}
-        />
-      ))}
+              {/* Render Real User Avatars */}
+        {sceneRef.current && userAvatars.map((avatar: any) => (
+          <Avatar3D
+            key={`avatar-${avatar.userId}`}
+            scene={sceneRef.current!}
+            position={avatar.position}
+            username={avatar.username}
+            avatarData={avatar.avatarData}
+            isCurrentUser={avatar.isCurrentUser}
+          />
+        ))}
+        
+        {/* Proximity Chat System */}
+        {sceneRef.current && (
+          <ProximityChat
+            scene={sceneRef.current}
+            currentUserPosition={currentUserPosition}
+            userAvatars={userAvatars}
+          />
+        )}
+        
+        {/* Avatar Movement Controls */}
+        {sceneRef.current && camera && (
+          <AvatarMovement
+            scene={sceneRef.current}
+            camera={camera}
+            currentUserAvatar={userAvatars.find(avatar => avatar.isCurrentUser)}
+          />
+        )}
       {isOfflineMode && (
         <div style={{
           position: 'absolute',

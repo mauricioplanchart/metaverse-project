@@ -145,6 +145,14 @@ const App: React.FC = () => {
         })
       })
 
+      // Avatar movement events
+      socketService.on('avatar-moved', (data: any) => {
+        console.log('🚶 Avatar moved:', data)
+        updateUser(data.userId, {
+          position: data.position
+        })
+      })
+
       // Avatar events
       socketService.on('avatar-updated', (data: any) => {
         console.log('🎭 Avatar updated:', data)
@@ -163,6 +171,19 @@ const App: React.FC = () => {
           message: `😊 ${data.emote}`,
           timestamp: Date.now(),
           type: 'action'
+        })
+      })
+
+      // Proximity chat events
+      socketService.on('proximity-message', (data: any) => {
+        console.log('💬 Proximity message:', data)
+        addChatMessage({
+          id: `proximity_${Date.now()}`,
+          userId: data.fromUserId,
+          username: data.username || 'Unknown',
+          message: `[Private] ${data.message}`,
+          timestamp: Date.now(),
+          type: 'whisper'
         })
       })
 
