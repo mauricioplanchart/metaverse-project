@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Bypass Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border-left: 4px solid #4CAF50;
+        }
+        .result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .success { background: #4CAF50; }
+        .error { background: #f44336; }
+        .warning { background: #ff9800; }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 CORS Bypass Test</h1>
+    
+    <div class="test-section">
+        <h2>Method 1: Direct Socket.IO with Polling Only</h2>
+        <button onclick="testMethod1()">Test Method 1</button>
+        <div id="result1"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Method 2: JSONP-style Polling</h2>
+        <button onclick="testMethod2()">Test Method 2</button>
+        <div id="result2"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Method 3: Fetch with No-CORS</h2>
+        <button onclick="testMethod3()">Test Method 3</button>
+        <div id="result3"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Method 4: WebSocket Direct</h2>
+        <button onclick="testMethod4()">Test Method 4</button>
+        <div id="result4"></div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://metaverse-project-3.onrender.com';
+        
+        function showResult(elementId, message, type = 'success') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="result ${type}">${new Date().toLocaleTimeString()}: ${message}</div>`;
+        }
+
+        // Method 1: Direct Socket.IO with polling only
+        function testMethod1() {
+            showResult('result1', '🔄 Testing Socket.IO with polling only...', 'warning');
+            
+            const socket = io(BACKEND_URL, {
+                transports: ['polling'],
+                timeout: 5000,
+                forceNew: true,
+                upgrade: false,
+                withCredentials: false
+            });
+
+            socket.on('connect', () => {
+                showResult('result1', `✅ Method 1 SUCCESS! Connected with ID: ${socket.id}`, 'success');
+                socket.disconnect();
+            });
+
+            socket.on('connect_error', (error) => {
+                showResult('result1', `❌ Method 1 FAILED: ${error.message}`, 'error');
+            });
+
+            setTimeout(() => {
+                if (!socket.connected) {
+                    showResult('result1', '⏰ Method 1 TIMEOUT', 'error');
+                }
+            }, 10000);
+        }
+
+        // Method 2: JSONP-style polling
+        function testMethod2() {
+            showResult('result2', '🔄 Testing JSONP-style polling...', 'warning');
+            
+            // Try to fetch the Socket.IO handshake
+            fetch(`${BACKEND_URL}/socket.io/?EIO=4&transport=polling`, {
+                method: 'GET',
+                mode: 'cors'
+            })
+            .then(response => response.text())
+            .then(data => {
+                showResult('result2', `✅ Method 2 SUCCESS! Got response: ${data.substring(0, 100)}...`, 'success');
+            })
+            .catch(error => {
+                showResult('result2', `❌ Method 2 FAILED: ${error.message}`, 'error');
+            });
+        }
+
+        // Method 3: Fetch with no-cors
+        function testMethod3() {
+            showResult('result3', '🔄 Testing fetch with no-cors...', 'warning');
+            
+            fetch(`${BACKEND_URL}/health`, {
+                method: 'GET',
+                mode: 'no-cors'
+            })
+            .then(response => {
+                showResult('result3', `✅ Method 3 SUCCESS! Status: ${response.status}`, 'success');
+            })
+            .catch(error => {
+                showResult('result3', `❌ Method 3 FAILED: ${error.message}`, 'error');
+            });
+        }
+
+        // Method 4: WebSocket direct
+        function testMethod4() {
+            showResult('result4', '🔄 Testing WebSocket direct...', 'warning');
+            
+            const ws = new WebSocket(`wss://metaverse-project-3.onrender.com/socket.io/?EIO=4&transport=websocket`);
+            
+            ws.onopen = () => {
+                showResult('result4', '✅ Method 4 SUCCESS! WebSocket connected', 'success');
+                ws.close();
+            };
+            
+            ws.onerror = (error) => {
+                showResult('result4', `❌ Method 4 FAILED: WebSocket error`, 'error');
+            };
+            
+            setTimeout(() => {
+                if (ws.readyState !== WebSocket.OPEN) {
+                    showResult('result4', '⏰ Method 4 TIMEOUT', 'error');
+                }
+            }, 10000);
+        }
+
+        // Auto-run all tests
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testMethod1();
+                setTimeout(testMethod2, 2000);
+                setTimeout(testMethod3, 4000);
+                setTimeout(testMethod4, 6000);
+            }, 1000);
+        });
+    </script>
+    
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</body>
+</html> 
