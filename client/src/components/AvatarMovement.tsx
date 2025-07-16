@@ -19,6 +19,7 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
   const [isMoving, setIsMoving] = useState(false);
   const [movementSpeed] = useState(0.1);
   const keysRef = useRef<{ [key: string]: boolean }>({});
+  const isInitializedRef = useRef(false);
 
   // Debug render
   console.log('🚶 AvatarMovement render:', { 
@@ -26,7 +27,8 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
     hasCamera: !!camera, 
     hasAvatar: !!currentUserAvatar,
     position: position.toString(),
-    isMoving
+    isMoving,
+    isInitialized: isInitializedRef.current
   });
 
   // Always render something, even if props are missing
@@ -63,7 +65,14 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
   }
 
   useEffect(() => {
+    // Prevent multiple initializations
+    if (isInitializedRef.current) {
+      console.log('🚶 AvatarMovement: Already initialized, skipping...');
+      return;
+    }
+
     console.log('🚶 AvatarMovement: Initializing movement system for user:', currentUserAvatar.username);
+    isInitializedRef.current = true;
 
     // Handle keyboard input
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -134,8 +143,9 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
       clearInterval(interval);
+      isInitializedRef.current = false;
     };
-  }, [scene, camera, currentUserAvatar, movementSpeed, currentUserId]); // Removed position from dependencies
+  }, []); // Empty dependency array - only run once
 
   // Handle server position updates
   useEffect(() => {
