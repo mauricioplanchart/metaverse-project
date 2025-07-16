@@ -55,17 +55,20 @@ class SocketService {
         const isProduction = this.serverUrl.includes('onrender.com') || this.serverUrl.includes('netlify.app');
         
         this.socket = io(this.serverUrl, {
-          transports: isProduction ? ['polling'] : ['websocket', 'polling'], // Force polling for production to avoid CORS issues
+          transports: ['polling'], // Force polling to avoid CORS issues
           timeout: 20000, // Increased timeout for production
           forceNew: true, // Force new connection
           reconnection: false, // Disable auto-reconnection to handle manually
           autoConnect: true,
           upgrade: false, // Disable upgrade to avoid WebSocket CORS issues
           rememberUpgrade: false,
-          secure: isProduction, // Enable secure for production
+          secure: true, // Always use secure for HTTPS
           rejectUnauthorized: false, // Allow self-signed certificates
           withCredentials: false, // Disable credentials for cross-origin
-          path: '/socket.io/' // Explicit path for Socket.IO
+          path: '/socket.io/', // Explicit path for Socket.IO
+          extraHeaders: {
+            'Origin': window.location.origin
+          }
         });
 
         const connectionTimeout = setTimeout(() => {
