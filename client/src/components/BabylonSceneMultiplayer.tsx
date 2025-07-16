@@ -7,6 +7,8 @@ import AvatarMovement from './AvatarMovement';
 // Import Babylon.js
 import * as BABYLON from '@babylonjs/core';
 
+console.log('🎮 AvatarMovement import test:', typeof AvatarMovement);
+
 const BabylonSceneMultiplayer: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<BABYLON.Engine | null>(null);
@@ -563,20 +565,29 @@ const BabylonSceneMultiplayer: React.FC = () => {
         )}
         
         {/* Avatar Movement Controls */}
-        {sceneRef.current && camera && (
-          <AvatarMovement
-            scene={sceneRef.current}
-            camera={camera}
-            currentUserAvatar={userAvatars.find(avatar => avatar.isCurrentUser) || {
-              userId: currentUserId,
-              username: `Player_${currentUserId}`,
-              position: currentUserPosition,
-              avatarData: avatarCustomization,
-              isCurrentUser: true,
-              mesh: null
-            }}
-          />
-        )}
+        {(() => {
+          console.log('🎮 AvatarMovement render check:', {
+            hasScene: !!sceneRef.current,
+            hasCamera: !!camera,
+            userAvatarsCount: userAvatars.length,
+            currentUserId
+          });
+          
+          return (
+            <AvatarMovement
+              scene={sceneRef.current || ({} as any)}
+              camera={camera || ({} as any)}
+              currentUserAvatar={userAvatars.find(avatar => avatar.isCurrentUser) || {
+                userId: currentUserId,
+                username: `Player_${currentUserId}`,
+                position: currentUserPosition,
+                avatarData: avatarCustomization,
+                isCurrentUser: true,
+                mesh: null
+              }}
+            />
+          );
+        })()}
       {isOfflineMode && (
         <div style={{
           position: 'absolute',

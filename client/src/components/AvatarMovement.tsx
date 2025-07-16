@@ -141,16 +141,17 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
       bottom: '20px',
       left: '50%',
       transform: 'translateX(-50%)',
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      backgroundColor: 'rgba(0, 0, 0, 0.9)',
       color: 'white',
       padding: '12px',
       borderRadius: '8px',
       fontSize: '12px',
       fontFamily: 'monospace',
-      zIndex: 1000
+      zIndex: 1000,
+      border: '2px solid #4CAF50'
     }}>
-      <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>
-        🚶 Avatar Movement
+      <div style={{ marginBottom: '8px', fontWeight: 'bold', color: '#4CAF50' }}>
+        🚶 Avatar Movement (v2)
       </div>
       <div style={{ marginBottom: '4px' }}>
         Position: X: {position.x.toFixed(2)}, Z: {position.z.toFixed(2)}
