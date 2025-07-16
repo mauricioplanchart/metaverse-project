@@ -599,20 +599,13 @@ const BabylonSceneMultiplayer: React.FC = () => {
                 fontSize: '12px',
                 zIndex: 999
               }}>
-                🧪 Movement Test Area
+                �� Movement Test Area - If you see this, AvatarMovement should render below
               </div>
               
               <AvatarMovement
-                scene={sceneRef.current || ({} as any)}
-                camera={camera || ({} as any)}
-                currentUserAvatar={userAvatars.find(avatar => avatar.isCurrentUser) || {
-                  userId: currentUserId,
-                  username: `Player_${currentUserId}`,
-                  position: currentUserPosition,
-                  avatarData: avatarCustomization,
-                  isCurrentUser: true,
-                  mesh: null
-                }}
+                scene={sceneRef.current || undefined}
+                camera={camera || undefined}
+                currentUserAvatar={userAvatars.find(avatar => avatar.isCurrentUser)}
               />
             </div>
           );

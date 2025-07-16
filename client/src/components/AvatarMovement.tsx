@@ -4,9 +4,9 @@ import { socketService } from '../lib/socketService';
 import * as BABYLON from '@babylonjs/core';
 
 interface AvatarMovementProps {
-  scene: BABYLON.Scene;
-  camera: BABYLON.Camera;
-  currentUserAvatar: any;
+  scene?: BABYLON.Scene;
+  camera?: BABYLON.Camera;
+  currentUserAvatar?: any;
 }
 
 const AvatarMovement: React.FC<AvatarMovementProps> = ({ 
@@ -14,12 +14,19 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
   camera, 
   currentUserAvatar 
 }) => {
-  const { currentUserId } = useMetaverseStore();
+  const { currentUserId, isConnected } = useMetaverseStore();
   const [position, setPosition] = useState<BABYLON.Vector3>(new BABYLON.Vector3(0, 0, 0));
   const [isMoving, setIsMoving] = useState(false);
   const [movementSpeed] = useState(0.1);
   const keysRef = useRef<{ [key: string]: boolean }>({});
+  const positionRef = useRef<BABYLON.Vector3>(new BABYLON.Vector3(0, 0, 0));
   const isInitializedRef = useRef(false);
+  const animationFrameRef = useRef<number>();
+  const [debugInfo, setDebugInfo] = useState({
+    keysPressed: '',
+    lastKey: '',
+    focusStatus: 'unknown'
+  });
 
   // Debug render
   console.log('🚶 AvatarMovement render:', { 
@@ -28,51 +35,40 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
     hasAvatar: !!currentUserAvatar,
     position: position.toString(),
     isMoving,
-    isInitialized: isInitializedRef.current
+    isInitialized: isInitializedRef.current,
+    isConnected,
+    debugInfo
   });
 
-  // Always render something, even if props are missing
-  if (!scene || !camera || !currentUserAvatar) {
-    return (
-      <div style={{
-        position: 'absolute',
-        bottom: '20px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        backgroundColor: 'rgba(255, 0, 0, 0.9)',
-        color: 'white',
-        padding: '12px',
-        borderRadius: '8px',
-        fontSize: '12px',
-        fontFamily: 'monospace',
-        zIndex: 1000,
-        border: '2px solid #ff0000'
-      }}>
-        <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>
-          🚫 Avatar Movement - Missing Props
-        </div>
-        <div style={{ fontSize: '10px', opacity: 0.7 }}>
-          Scene: {scene ? '✅' : '❌'}
-        </div>
-        <div style={{ fontSize: '10px', opacity: 0.7 }}>
-          Camera: {camera ? '✅' : '❌'}
-        </div>
-        <div style={{ fontSize: '10px', opacity: 0.7 }}>
-          Avatar: {currentUserAvatar ? '✅' : '❌'}
-        </div>
-      </div>
-    );
-  }
-
+  // Initialize movement system
   useEffect(() => {
+    console.log('🚶 AvatarMovement: useEffect triggered');
+    
     // Prevent multiple initializations
     if (isInitializedRef.current) {
       console.log('🚶 AvatarMovement: Already initialized, skipping...');
       return;
     }
 
-    console.log('🚶 AvatarMovement: Initializing movement system for user:', currentUserAvatar.username);
+    console.log('🚶 AvatarMovement: Initializing movement system');
     isInitializedRef.current = true;
+
+    // Global key listener for debugging
+    const globalKeyListener = (event: KeyboardEvent) => {
+      console.log('🌍 GLOBAL KEY EVENT:', {
+        key: event.key,
+        code: event.code,
+        type: event.type,
+        target: event.target,
+        currentTarget: event.currentTarget
+      });
+      
+      setDebugInfo(prev => ({
+        ...prev,
+        lastKey: `${event.key} (${event.code})`,
+        keysPressed: Object.keys(keysRef.current).filter(k => keysRef.current[k]).join(', ')
+      }));
+    };
 
     // Handle keyboard input
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -80,27 +76,12 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
       keysRef.current[key] = true;
       setIsMoving(true);
       
-      // Handle jump
-      if (key === ' ' || key === 'space') {
-        console.log('🚶 Jump triggered!');
-        if (currentUserAvatar && currentUserAvatar.mesh && currentUserAvatar.mesh.avatarAnimations) {
-          scene.beginDirectAnimation(
-            currentUserAvatar.mesh, 
-            [currentUserAvatar.mesh.avatarAnimations.jump], 
-            0, 
-            30, 
-            false
-          );
-        }
-      }
-      
       console.log('🚶 Key pressed:', key, 'Keys state:', keysRef.current);
-      console.log('🚶 Event details:', {
-        key: event.key,
-        code: event.code,
-        keyCode: event.keyCode,
-        which: event.which
-      });
+      setDebugInfo(prev => ({
+        ...prev,
+        lastKey: `DOWN: ${key}`,
+        keysPressed: Object.keys(keysRef.current).filter(k => keysRef.current[k]).join(', ')
+      }));
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
@@ -111,40 +92,54 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
       const movementKeys = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
       const anyKeyPressed = movementKeys.some(k => keysRef.current[k]);
       setIsMoving(anyKeyPressed);
+      
       console.log('🚶 Key released:', key, 'Keys state:', keysRef.current, 'Any movement key pressed:', anyKeyPressed);
+      setDebugInfo(prev => ({
+        ...prev,
+        lastKey: `UP: ${key}`,
+        keysPressed: Object.keys(keysRef.current).filter(k => keysRef.current[k]).join(', ')
+      }));
     };
 
-    // Test if the canvas is capturing focus
-    const handleCanvasFocus = () => {
-      console.log('🚶 Canvas focused - keys should work now');
-    };
-
-    const handleCanvasBlur = () => {
-      console.log('🚶 Canvas lost focus - keys might not work');
-    };
-
+    // Add event listeners
+    window.addEventListener('keydown', globalKeyListener);
+    window.addEventListener('keyup', globalKeyListener);
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
-    
-    // Add a global test listener to see if ANY keys are being detected
-    const globalKeyTest = (event: KeyboardEvent) => {
-      console.log('🚶 GLOBAL KEY TEST - Key pressed:', event.key, 'Code:', event.code);
-    };
-    window.addEventListener('keydown', globalKeyTest);
     
     // Try to focus the canvas for key events
     const canvas = document.querySelector('canvas');
     if (canvas) {
-      canvas.addEventListener('focus', handleCanvasFocus);
-      canvas.addEventListener('blur', handleCanvasBlur);
       canvas.focus();
       console.log('🚶 Attempting to focus canvas for key events');
+      setDebugInfo(prev => ({ ...prev, focusStatus: 'canvas focused' }));
+      
+      // Add focus/blur listeners to canvas
+      canvas.addEventListener('focus', () => {
+        console.log('🚶 Canvas focused');
+        setDebugInfo(prev => ({ ...prev, focusStatus: 'canvas focused' }));
+      });
+      
+      canvas.addEventListener('blur', () => {
+        console.log('🚶 Canvas lost focus');
+        setDebugInfo(prev => ({ ...prev, focusStatus: 'canvas blurred' }));
+      });
+
+      // Add click listener to focus canvas when clicked
+      canvas.addEventListener('click', () => {
+        canvas.focus();
+        console.log('🚶 Canvas clicked and focused');
+        setDebugInfo(prev => ({ ...prev, focusStatus: 'canvas clicked and focused' }));
+      });
+    } else {
+      console.log('🚶 No canvas found');
+      setDebugInfo(prev => ({ ...prev, focusStatus: 'no canvas found' }));
     }
 
     // Movement loop
     const movementLoop = () => {
       let moved = false;
-      const newPosition = position.clone();
+      const newPosition = positionRef.current.clone();
 
       // Debug: Log current key state
       const movementKeys = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
@@ -177,77 +172,96 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
 
       // Update position if moved
       if (moved) {
+        positionRef.current = newPosition;
         setPosition(newPosition);
         console.log('🚶 Moving to position:', newPosition);
         
         // Update avatar position in 3D scene (if mesh exists)
         if (currentUserAvatar && currentUserAvatar.mesh) {
           currentUserAvatar.mesh.position = newPosition;
-          
-          // Play walking animation
-          if (currentUserAvatar.mesh.avatarAnimations && currentUserAvatar.mesh.avatarAnimations.walk) {
-            scene.beginDirectAnimation(
-              currentUserAvatar.mesh, 
-              [currentUserAvatar.mesh.avatarAnimations.walk], 
-              0, 
-              60, 
-              true
-            );
-          }
         }
 
         // Send position update to server
-        socketService.emit('avatar-move', {
-          position: newPosition,
-          timestamp: Date.now()
-        });
-      } else {
-        // If not moving, play idle animation
-        if (currentUserAvatar && currentUserAvatar.mesh && currentUserAvatar.mesh.avatarAnimations) {
-          scene.beginDirectAnimation(
-            currentUserAvatar.mesh, 
-            [currentUserAvatar.mesh.avatarAnimations.idle], 
-            0, 
-            60, 
-            true
-          );
+        if (isConnected) {
+          socketService.emit('avatar-move', {
+            userId: currentUserId,
+            position: {
+              x: newPosition.x,
+              y: newPosition.y,
+              z: newPosition.z
+            }
+          });
         }
       }
+
+      // Continue the loop
+      animationFrameRef.current = requestAnimationFrame(movementLoop);
     };
 
-    // Run movement loop
-    const interval = setInterval(movementLoop, 16); // ~60fps
+    // Start the movement loop
+    animationFrameRef.current = requestAnimationFrame(movementLoop);
 
+    // Cleanup function
     return () => {
+      window.removeEventListener('keydown', globalKeyListener);
+      window.removeEventListener('keyup', globalKeyListener);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
-      clearInterval(interval);
-      isInitializedRef.current = false;
-    };
-  }, []); // Empty dependency array - only run once
-
-  // Handle server position updates
-  useEffect(() => {
-    const handleAvatarMove = (data: any) => {
-      if (data.userId === currentUserId) {
-        setPosition(new BABYLON.Vector3(data.position.x, data.position.y, data.position.z));
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
     };
+  }, [currentUserId, isConnected, currentUserAvatar, movementSpeed]);
 
-    socketService.on('avatar-moved', handleAvatarMove);
-
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
-      socketService.off('avatar-moved', handleAvatarMove);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
     };
-  }, [currentUserId]);
+  }, []);
 
+  // Test movement function
   const testMovement = () => {
-    const newPosition = position.clone();
-    newPosition.x += 1;
-    setPosition(newPosition);
-    console.log('🚶 Test movement to:', newPosition);
+    console.log('🧪 Testing movement...');
+    const testPosition = new BABYLON.Vector3(5, 0, 5);
+    setPosition(testPosition);
+    
+    if (isConnected) {
+      socketService.emit('avatar-move', {
+        userId: currentUserId,
+        position: {
+          x: testPosition.x,
+          y: testPosition.y,
+          z: testPosition.z
+        }
+      });
+    }
   };
 
+  // Test key detection
+  const testKeyDetection = () => {
+    console.log('🧪 Testing key detection...');
+    console.log('Current keys state:', keysRef.current);
+    console.log('Debug info:', debugInfo);
+    
+    // Simulate a key press
+    const testEvent = new KeyboardEvent('keydown', { key: 'w', code: 'KeyW' });
+    window.dispatchEvent(testEvent);
+  };
+
+  // Focus canvas manually
+  const focusCanvas = () => {
+    const canvas = document.querySelector('canvas');
+    if (canvas) {
+      canvas.focus();
+      console.log('🚶 Manually focused canvas');
+      setDebugInfo(prev => ({ ...prev, focusStatus: 'manually focused' }));
+    }
+  };
+
+  // Always render the movement UI
   return (
     <div style={{
       position: 'absolute',
@@ -261,41 +275,76 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
       fontSize: '12px',
       fontFamily: 'monospace',
       zIndex: 1000,
-      border: '2px solid #4CAF50'
+      border: '2px solid #00ff00',
+      minWidth: '300px'
     }}>
-      <div style={{ marginBottom: '8px', fontWeight: 'bold', color: '#4CAF50' }}>
-        🚶 Avatar Movement (v2)
+      <div style={{ marginBottom: '8px', fontWeight: 'bold' }}>
+        🚶 Avatar Movement Controls
       </div>
-      <div style={{ marginBottom: '4px' }}>
-        Position: X: {position.x.toFixed(2)}, Z: {position.z.toFixed(2)}
+      <div style={{ fontSize: '10px', opacity: 0.7, marginBottom: '8px' }}>
+        Use WASD or Arrow Keys to move
       </div>
-      <div style={{ marginBottom: '4px' }}>
-        Status: {isMoving ? '🟢 Moving' : '⚪ Idle'}
+      <div style={{ fontSize: '10px', opacity: 0.7, marginBottom: '8px' }}>
+        Position: {position.x.toFixed(2)}, {position.y.toFixed(2)}, {position.z.toFixed(2)}
       </div>
-      <div style={{ marginBottom: '4px', fontSize: '10px', opacity: 0.7 }}>
-        System: {scene && camera && currentUserAvatar ? '🟢 Active' : '🔴 Inactive'}
+      <div style={{ fontSize: '10px', opacity: 0.7, marginBottom: '8px' }}>
+        Moving: {isMoving ? '✅' : '❌'}
       </div>
-      <div style={{ marginBottom: '8px' }}>
-        <button 
+      <div style={{ fontSize: '10px', opacity: 0.7, marginBottom: '8px' }}>
+        Connected: {isConnected ? '✅' : '❌'}
+      </div>
+      <div style={{ fontSize: '10px', opacity: 0.7, marginBottom: '8px' }}>
+        Focus: {debugInfo.focusStatus}
+      </div>
+      <div style={{ fontSize: '10px', opacity: 0.7, marginBottom: '8px' }}>
+        Last Key: {debugInfo.lastKey}
+      </div>
+      <div style={{ fontSize: '10px', opacity: 0.7, marginBottom: '8px' }}>
+        Keys Pressed: {debugInfo.keysPressed || 'none'}
+      </div>
+      <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+        <button
           onClick={testMovement}
           style={{
-            padding: '4px 8px',
-            backgroundColor: '#4CAF50',
+            backgroundColor: '#007bff',
             color: 'white',
             border: 'none',
+            padding: '4px 8px',
             borderRadius: '4px',
             fontSize: '10px',
             cursor: 'pointer'
           }}
         >
-          Test Move
+          Test Movement
         </button>
-      </div>
-      <div style={{ fontSize: '10px', opacity: 0.7 }}>
-        Use WASD or Arrow Keys to move
-      </div>
-      <div style={{ fontSize: '10px', opacity: 0.7 }}>
-        Walk near other avatars to chat!
+        <button
+          onClick={testKeyDetection}
+          style={{
+            backgroundColor: '#28a745',
+            color: 'white',
+            border: 'none',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            fontSize: '10px',
+            cursor: 'pointer'
+          }}
+        >
+          Test Keys
+        </button>
+        <button
+          onClick={focusCanvas}
+          style={{
+            backgroundColor: '#ffc107',
+            color: 'black',
+            border: 'none',
+            padding: '4px 8px',
+            borderRadius: '4px',
+            fontSize: '10px',
+            cursor: 'pointer'
+          }}
+        >
+          Focus Canvas
+        </button>
       </div>
     </div>
   );
