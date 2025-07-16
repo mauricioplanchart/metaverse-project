@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>🔗 Simple Connection Test</h1>
+    
+    <div class="status info" id="status">Testing connections...</div>
+    
+    <button onclick="testConnections()">Test Connections</button>
+    <button onclick="openMainApp()">Open Main App</button>
+    
+    <div id="results"></div>
+
+    <script>
+        async function testConnections() {
+            const statusDiv = document.getElementById('status');
+            const resultsDiv = document.getElementById('results');
+            
+            statusDiv.className = 'status info';
+            statusDiv.textContent = 'Testing connections...';
+            resultsDiv.innerHTML = '';
+            
+            // Test server
+            try {
+                const serverResponse = await fetch('http://localhost:3001');
+                const serverData = await serverResponse.json();
+                
+                resultsDiv.innerHTML += `
+                    <div class="status success">
+                        ✅ Server: ${serverData.message}<br>
+                        Version: ${serverData.version}<br>
+                        Active Users: ${serverData.activeUsers}
+                    </div>
+                `;
+            } catch (error) {
+                resultsDiv.innerHTML += `
+                    <div class="status error">
+                        ❌ Server Error: ${error.message}
+                    </div>
+                `;
+            }
+            
+            // Test client
+            try {
+                const clientResponse = await fetch('http://localhost:5173');
+                if (clientResponse.ok) {
+                    resultsDiv.innerHTML += `
+                        <div class="status success">
+                            ✅ Client: React app is running
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML += `
+                        <div class="status error">
+                            ❌ Client Error: ${clientResponse.status} ${clientResponse.statusText}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML += `
+                    <div class="status error">
+                        ❌ Client Error: ${error.message}
+                    </div>
+                `;
+            }
+            
+            statusDiv.className = 'status success';
+            statusDiv.textContent = 'Tests completed!';
+        }
+        
+        function openMainApp() {
+            window.open('http://localhost:5173', '_blank');
+        }
+        
+        // Auto-test on page load
+        window.onload = function() {
+            setTimeout(testConnections, 1000);
+        };
+    </script>
+</body>
+</html> 

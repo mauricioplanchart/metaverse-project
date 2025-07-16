@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connection Debug</title>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .log {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .success { background: #22c55e; }
+        .error { background: #ef4444; }
+        .warning { background: #f59e0b; }
+        .info { background: #3b82f6; }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #45a049; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Connection Debug Tool</h1>
+    
+    <div id="status" class="status info">Initializing...</div>
+    
+    <div>
+        <button onclick="testServer()">Test Server</button>
+        <button onclick="testSocket()">Test Socket</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <div id="log" class="log"></div>
+
+    <script>
+        let socket = null;
+        const log = document.getElementById('log');
+        const status = document.getElementById('status');
+        
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logEntry.style.color = type === 'error' ? '#ef4444' : 
+                                 type === 'success' ? '#22c55e' : 
+                                 type === 'warning' ? '#f59e0b' : '#ffffff';
+            log.appendChild(logEntry);
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function clearLog() {
+            log.innerHTML = '';
+        }
+        
+        function updateStatus(message, type = 'info') {
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+        
+        async function testServer() {
+            addLog('🔍 Testing server connection...');
+            try {
+                const response = await fetch('http://localhost:3001');
+                const data = await response.json();
+                addLog(`✅ Server is running! Status: ${response.status}`, 'success');
+                addLog(`📄 Server info: ${JSON.stringify(data, null, 2)}`, 'info');
+                updateStatus('Server: ✅', 'success');
+            } catch (error) {
+                addLog(`❌ Server test failed: ${error.message}`, 'error');
+                updateStatus('Server: ❌', 'error');
+            }
+        }
+        
+        function testSocket() {
+            addLog('🔌 Testing socket connection...');
+            
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+            }
+            
+            socket = io('http://localhost:3001', {
+                transports: ['websocket', 'polling'],
+                timeout: 20000,
+                forceNew: true,
+                reconnection: false,
+                autoConnect: true
+            });
+            
+            const connectionTimeout = setTimeout(() => {
+                addLog('⏰ Socket connection timeout after 20 seconds', 'error');
+                updateStatus('Socket: ❌ (Timeout)', 'error');
+            }, 20000);
+            
+            socket.on('connect', () => {
+                addLog('✅ Socket connected successfully!', 'success');
+                addLog(`🆔 Socket ID: ${socket.id}`, 'info');
+                clearTimeout(connectionTimeout);
+                updateStatus('Socket: ✅', 'success');
+                
+                // Test joining a world
+                socket.emit('join-world', {
+                    worldId: 'main-world',
+                    username: 'DebugUser_' + Math.random().toString(36).substr(2, 6)
+                });
+            });
+            
+            socket.on('connect_error', (error) => {
+                addLog(`❌ Socket connection error: ${error.message}`, 'error');
+                clearTimeout(connectionTimeout);
+                updateStatus('Socket: ❌', 'error');
+            });
+            
+            socket.on('user-id', (userId) => {
+                addLog(`👤 Received user ID: ${userId}`, 'success');
+            });
+            
+            socket.on('room-data', (data) => {
+                addLog(`🏠 Room data: ${JSON.stringify(data, null, 2)}`, 'info');
+            });
+            
+            socket.on('users-update', (users) => {
+                addLog(`👥 Users update: ${users.length} users`, 'info');
+            });
+            
+            socket.on('disconnect', (reason) => {
+                addLog(`❌ Socket disconnected: ${reason}`, 'warning');
+            });
+        }
+        
+        // Auto-run tests on page load
+        window.addEventListener('load', () => {
+            addLog('🚀 Page loaded, starting connection tests...');
+            setTimeout(testServer, 1000);
+            setTimeout(testSocket, 2000);
+        });
+    </script>
+</body>
+</html> 

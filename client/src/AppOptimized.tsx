@@ -83,10 +83,17 @@ const AppOptimized: React.FC = () => {
     }
     
     let connectionTimeout: NodeJS.Timeout;
+    let isConnecting = false;
     
     const initializeConnection = async () => {
+      if (isConnecting) {
+        console.log('🔄 Connection already in progress, skipping...');
+        return;
+      }
+      
       try {
         console.log('🚀 Starting connection attempt...');
+        isConnecting = true;
         setIsInitialized(true);
         handleLoadingProgress(10, 'Connecting to server...');
         
@@ -95,7 +102,8 @@ const AppOptimized: React.FC = () => {
           console.error('⏰ Connection process timeout');
           setConnectionError('Connection timeout - server may be unavailable');
           handleLoadingProgress(0, 'Connection failed');
-        }, 15000);
+          isConnecting = false;
+        }, 25000); // Increased timeout
         
         await socketService.connect()
         handleLoadingProgress(30, 'Setting up socket listeners...');
@@ -118,12 +126,14 @@ const AppOptimized: React.FC = () => {
         
         handleLoadingProgress(70, 'Joining world...');
         clearTimeout(connectionTimeout);
+        isConnecting = false;
       } catch (error) {
         console.error('❌ Failed to connect:', error)
         clearTimeout(connectionTimeout);
         setConnectionError(`Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
         setIsInitialized(false); // Allow retry
         handleLoadingProgress(0, 'Connection failed');
+        isConnecting = false;
       }
     }
 
@@ -281,12 +291,13 @@ const AppOptimized: React.FC = () => {
   // Emergency timeout to force proceed if connection takes too long
   useEffect(() => {
     const emergencyTimeout = setTimeout(() => {
-      if (!isConnected && !forceProceed) {
+      if (!isConnected && !forceProceed && !socketService.isConnectingState) {
         console.log('🚨 Emergency timeout - forcing proceed')
         setForceProceed(true)
         setShowLoading(false)
+        setConnectionError(null) // Clear any connection errors
       }
-    }, 20000) // 20 seconds
+    }, 30000) // Increased to 30 seconds
 
     return () => clearTimeout(emergencyTimeout)
   }, [isConnected, forceProceed])

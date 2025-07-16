@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useMetaverseStore } from '../stores/useMetaverseStore';
+import { socketService } from '../lib/socketService';
 import Avatar3D from './Avatar3D';
 import ProximityChat from './ProximityChat';
 import AvatarMovement from './AvatarMovement';
@@ -53,9 +54,16 @@ const BabylonSceneMultiplayer: React.FC = () => {
       return;
     }
 
-    // Allow offline mode if no connection
+    // Allow offline mode if no connection, but with better debugging
     if (!isConnected) {
       console.log('🔄 No connection detected, enabling offline mode...');
+      console.log('🔧 Connection debug:', {
+        isConnected,
+        socketServiceConnected: socketService.isConnected,
+        socketServiceConnecting: socketService.isConnectingState,
+        socketId: socketService.id,
+        serverUrl: socketService.serverUrlForDebug
+      });
       setIsOfflineMode(true);
     }
 

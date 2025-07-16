@@ -15,6 +15,7 @@ const App: React.FC = () => {
   const [showCustomizer, setShowCustomizer] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
   const [forceProceed, setForceProceed] = useState(false)
+  const [connectionStep, setConnectionStep] = useState('initializing')
   const [version] = useState(() => Date.now()) // Cache busting
   
   console.log('🎮 App component rendering v3...', { version })
@@ -34,7 +35,8 @@ const App: React.FC = () => {
     removeUser,
     updateUser,
     showInteractionPrompt,
-    interactionPromptText
+    interactionPromptText,
+    setInteractionPrompt
   } = useMetaverseStore()
 
   // Add debug mode toggle and avatar customizer toggle
@@ -61,63 +63,6 @@ const App: React.FC = () => {
     let connectionTimeout: NodeJS.Timeout;
     let isConnecting = false;
     
-    const initializeConnection = async () => {
-      if (isConnecting) {
-        console.log('🔄 Connection already in progress, skipping...');
-        return;
-      }
-      
-      try {
-        console.log('🚀 Starting connection attempt...');
-        isConnecting = true;
-        setIsInitialized(true);
-        
-        // Set a timeout for the entire connection process
-        connectionTimeout = setTimeout(() => {
-          console.error('⏰ Connection process timeout');
-          setConnectionError('Connection timeout - server may be unavailable');
-          isConnecting = false;
-        }, 15000);
-        
-        await socketService.connect()
-        setupSocketListeners()
-        
-        // Force set connected if socket is actually connected
-        if (socketService.isConnected) {
-          console.log('🔧 Socket is connected, forcing state update')
-          setConnected(true)
-          setConnectionError(null) // Clear any previous errors
-        }
-        
-        // Join the default world
-        const username = `Player_${Math.random().toString(36).substr(2, 6)}`
-        socketService.emit('join-world', {
-          worldId: 'main-world',
-          username: username
-        })
-        
-        clearTimeout(connectionTimeout);
-        isConnecting = false;
-      } catch (error) {
-        console.error('❌ Failed to connect:', error)
-        clearTimeout(connectionTimeout);
-        setConnectionError(`Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
-        setIsInitialized(false); // Allow retry
-        isConnecting = false;
-      }
-    }
-
-    // Start the connection process
-    initializeConnection();
-
-    // Cleanup function
-    return () => {
-      console.log('🧹 Cleaning up connection...');
-      clearTimeout(connectionTimeout);
-      isConnecting = false;
-      // Don't disconnect here - let the socket service handle reconnection
-    };
-
     const setupSocketListeners = () => {
       // Connection events
       socketService.on('connect', () => {
@@ -224,94 +169,117 @@ const App: React.FC = () => {
         }
       })
 
-      // Interaction events
-      socketService.on('collect-success', (data: any) => {
-        console.log('🎁 Item collected:', data)
-        // Show collection notification
-        addChatMessage({
-          id: `collect_${Date.now()}`,
-          userId: 'system',
-          username: 'System',
-          message: `✨ Collected ${data.items?.join(', ')} (+${data.xp} XP)`,
-          timestamp: Date.now(),
-          type: 'achievement'
-        })
-      })
-
-      socketService.on('dialogue', (data: any) => {
-        console.log('💬 Dialogue:', data)
-        addChatMessage({
-          id: `dialogue_${Date.now()}`,
-          userId: 'system',
-          username: data.objectName || 'NPC',
-          message: data.message,
-          timestamp: Date.now(),
-          type: 'system'
-        })
-      })
-
-      socketService.on('achievements-unlocked', (achievements: any[]) => {
-        console.log('🏆 Achievements unlocked:', achievements)
-        achievements.forEach(achievement => {
-          addUnlockedAchievement(achievement)
-          addChatMessage({
-            id: `achievement_${Date.now()}_${achievement.id}`,
-            userId: 'system',
-            username: 'System',
-            message: `🏆 Achievement Unlocked: ${achievement.name} - ${achievement.description}`,
-            timestamp: Date.now(),
-            type: 'achievement'
-          })
-        })
-      })
-
       // Chat events
       socketService.on('chat-message', (message: any) => {
+        console.log('💬 Chat message received:', message)
         addChatMessage(message)
       })
 
-      socketService.on('user-typing', (data: any) => {
-        if (data.isTyping) {
-          addTypingUser(data.userId)
-        } else {
-          removeTypingUser(data.userId)
+      socketService.on('typing-start', (userId: string) => {
+        console.log('⌨️ User started typing:', userId)
+        addTypingUser(userId)
+      })
+
+      socketService.on('typing-stop', (userId: string) => {
+        console.log('⌨️ User stopped typing:', userId)
+        removeTypingUser(userId)
+      })
+
+      // Interaction events
+      socketService.on('interaction-prompt', (data: any) => {
+        console.log('🎯 Interaction prompt:', data)
+        setInteractionPrompt(true, data.message)
+      })
+
+      socketService.on('interaction-result', (data: any) => {
+        console.log('🎯 Interaction result:', data)
+        // Handle interaction results
+      })
+    }
+
+    const initializeConnection = async () => {
+      if (isConnecting) {
+        console.log('🔄 Connection already in progress, skipping...');
+        return;
+      }
+      
+      try {
+        console.log('🚀 Starting connection attempt...');
+        isConnecting = true;
+        setIsInitialized(true);
+        setConnectionStep('connecting');
+        
+        // Set a timeout for the entire connection process
+        connectionTimeout = setTimeout(() => {
+          console.error('⏰ Connection process timeout');
+          setConnectionError('Connection timeout - server may be unavailable');
+          isConnecting = false;
+        }, 12000); // Reduced from 15 to 12 seconds
+        
+        await socketService.connect()
+        setConnectionStep('socket-connected');
+        setupSocketListeners()
+        
+        // Force set connected if socket is actually connected
+        if (socketService.isConnected) {
+          console.log('🔧 Socket is connected, forcing state update')
+          setConnected(true)
+          setConnectionError(null) // Clear any previous errors
+          setConnectionStep('joining-world');
         }
-      })
-
-      // Error handling
-      socketService.on('error', (error: any) => {
-        console.error('❌ Socket error:', error)
-        addChatMessage({
-          id: `error_${Date.now()}`,
-          userId: 'system',
-          username: 'System',
-          message: `❌ Error: ${error.message}`,
-          timestamp: Date.now(),
-          type: 'system'
+        
+        // Join the default world
+        const username = `Player_${Math.random().toString(36).substr(2, 6)}`
+        socketService.emit('join-world', {
+          worldId: 'main-world',
+          username: username
         })
-      })
+        
+        clearTimeout(connectionTimeout);
+        isConnecting = false;
+      } catch (error) {
+        console.error('❌ Failed to connect:', error)
+        clearTimeout(connectionTimeout);
+        setConnectionError(`Connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        setIsInitialized(false); // Allow retry
+        isConnecting = false;
+      }
     }
 
-    // Initialize connection immediately
-    initializeConnection()
+    // Start the connection process
+    initializeConnection();
 
-    // Cleanup on unmount
+    // Cleanup function
     return () => {
-      socketService.disconnect()
-    }
-  }, []) // Empty dependency array - only run once
+      console.log('🧹 Cleaning up connection...');
+      clearTimeout(connectionTimeout);
+      isConnecting = false;
+      // Don't disconnect here - let the socket service handle reconnection
+    };
+  }, [isInitialized, setConnected, setCurrentUserId, setCurrentUser, setCurrentRoom, setUsers, addChatMessage, addTypingUser, removeTypingUser, setUserProgress, addUnlockedAchievement, removeUser, updateUser, showInteractionPrompt, setInteractionPrompt])
 
   // Emergency timeout to force proceed if stuck
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (!isConnected && !connectionError && !forceProceed) {
-        console.log('🚨 Emergency timeout: forcing proceed after 10 seconds');
+        console.log('🚨 Emergency timeout: forcing proceed after 8 seconds');
         setForceProceed(true);
       }
-    }, 10000);
+    }, 8000); // Reduced from 10 to 8 seconds
 
     return () => clearTimeout(timeout);
   }, [isConnected, connectionError, forceProceed]);
+
+  // Additional debug logging
+  useEffect(() => {
+    console.log('🔧 App state update:', {
+      isConnected,
+      connectionError,
+      forceProceed,
+      socketConnected: socketService.isConnected,
+      isInitialized
+    });
+  }, [isConnected, connectionError, forceProceed, isInitialized]);
 
   if (debugMode) {
     return (
@@ -385,7 +353,14 @@ const App: React.FC = () => {
           🌍 Connecting to Metaverse...
         </div>
         <div style={{ fontSize: '16px', opacity: 0.8 }}>
-          {isConnected ? 'Loading 3D world...' : 'Initializing connection...'}
+          {connectionStep === 'initializing' && 'Initializing connection...'}
+          {connectionStep === 'connecting' && 'Connecting to server...'}
+          {connectionStep === 'socket-connected' && 'Socket connected, setting up...'}
+          {connectionStep === 'joining-world' && 'Joining virtual world...'}
+          {isConnected && 'Loading 3D world...'}
+        </div>
+        <div style={{ fontSize: '14px', opacity: 0.7, marginTop: '5px' }}>
+          {socketService.isConnected ? '✅ Socket connected' : '🔄 Connecting socket...'}
         </div>
         <div style={{ fontSize: '12px', opacity: 0.6, marginTop: '10px' }}>
           Debug: Socket connected = {socketService.isConnected ? 'Yes' : 'No'}
@@ -427,6 +402,11 @@ const App: React.FC = () => {
         >
           🚨 Force Continue (Manual Override)
         </button>
+        <div style={{ fontSize: '12px', opacity: 0.6, marginTop: '10px' }}>
+          Debug Info: isConnected={isConnected ? 'true' : 'false'}, 
+          socketConnected={socketService.isConnected ? 'true' : 'false'}, 
+          connectionError={connectionError || 'none'}
+        </div>
         <style>
           {`
             @keyframes loading {
