@@ -567,7 +567,14 @@ const BabylonSceneMultiplayer: React.FC = () => {
           <AvatarMovement
             scene={sceneRef.current}
             camera={camera}
-            currentUserAvatar={userAvatars.find(avatar => avatar.isCurrentUser)}
+            currentUserAvatar={userAvatars.find(avatar => avatar.isCurrentUser) || {
+              userId: currentUserId,
+              username: `Player_${currentUserId}`,
+              position: currentUserPosition,
+              avatarData: avatarCustomization,
+              isCurrentUser: true,
+              mesh: null
+            }}
           />
         )}
       {isOfflineMode && (

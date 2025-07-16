@@ -20,7 +20,16 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
   const [movementSpeed] = useState(0.1);
 
   useEffect(() => {
-    if (!scene || !camera || !currentUserAvatar) return;
+    if (!scene || !camera || !currentUserAvatar) {
+      console.log('🚶 AvatarMovement: Missing required props:', { 
+        hasScene: !!scene, 
+        hasCamera: !!camera, 
+        hasAvatar: !!currentUserAvatar 
+      });
+      return;
+    }
+
+    console.log('🚶 AvatarMovement: Initializing movement system for user:', currentUserAvatar.username);
 
     const keys: { [key: string]: boolean } = {};
 
@@ -28,6 +37,7 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
     const handleKeyDown = (event: KeyboardEvent) => {
       keys[event.key.toLowerCase()] = true;
       setIsMoving(true);
+      console.log('🚶 Key pressed:', event.key.toLowerCase());
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
@@ -64,8 +74,9 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
       // Update position if moved
       if (moved) {
         setPosition(newPosition);
+        console.log('🚶 Moving to position:', newPosition);
         
-        // Update avatar position in 3D scene
+        // Update avatar position in 3D scene (if mesh exists)
         if (currentUserAvatar && currentUserAvatar.mesh) {
           currentUserAvatar.mesh.position = newPosition;
         }
@@ -125,6 +136,9 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
       </div>
       <div style={{ marginBottom: '4px' }}>
         Status: {isMoving ? '🟢 Moving' : '⚪ Idle'}
+      </div>
+      <div style={{ marginBottom: '4px', fontSize: '10px', opacity: 0.7 }}>
+        System: {scene && camera && currentUserAvatar ? '🟢 Active' : '🔴 Inactive'}
       </div>
       <div style={{ fontSize: '10px', opacity: 0.7 }}>
         Use WASD or Arrow Keys to move
