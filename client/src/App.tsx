@@ -6,6 +6,7 @@ import ChatOverlay from './components/ChatOverlay'
 import { useMetaverseStore } from './stores/useMetaverseStore'
 import { socketService } from './lib/socketService'
 import { AvatarCustomizer } from './components/AvatarCustomizer'
+import ErrorBoundary from './components/ErrorBoundary'
 
 const App: React.FC = () => {
   const [connectionError, setConnectionError] = useState<string | null>(null)
@@ -451,131 +452,133 @@ const App: React.FC = () => {
   }
 
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
-      {/* Avatar Customizer Modal */}
-      {showCustomizer && (
-        <div style={{
-          position: 'absolute',
-          zIndex: 1000,
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          background: 'rgba(10,10,20,0.85)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backdropFilter: 'blur(8px)',
-        }}>
+    <ErrorBoundary>
+      <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+        {/* Avatar Customizer Modal */}
+        {showCustomizer && (
           <div style={{
-            background: 'rgba(255,255,255,0.05)',
-            borderRadius: '24px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
-            padding: '32px 40px',
-            minWidth: 360,
-            maxWidth: 420,
-            border: '1.5px solid rgba(255,255,255,0.12)',
+            position: 'absolute',
+            zIndex: 1000,
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(10,10,20,0.85)',
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(8px)',
           }}>
-            <h2 style={{ color: '#fff', fontWeight: 700, fontSize: 28, marginBottom: 16, letterSpacing: 1 }}>Customize Your Avatar</h2>
-            <AvatarCustomizer />
-            <button
-              style={{
-                marginTop: 32,
-                padding: '12px 32px',
-                fontSize: 18,
-                fontWeight: 600,
-                borderRadius: 12,
-                border: 'none',
-                background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
-                color: '#fff',
-                cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(76, 119, 175, 0.15)',
-                transition: 'background 0.2s',
-              }}
-              onClick={() => setShowCustomizer(false)}
-            >
-              Enter World
-            </button>
-          </div>
-        </div>
-      )}
-      {/* Main 3D World Scene */}
-      {!showCustomizer && (() => {
-        try {
-          console.log('🌍 Rendering BabylonSceneMultiplayer...')
-          console.log('🔧 Debug info:', { isConnected, connectionError, showCustomizer })
-          return <BabylonSceneMultiplayer key={`scene-main-${version}`} />
-        } catch (error) {
-          console.error('❌ Error rendering BabylonSceneMultiplayer:', error)
-          return (
             <div style={{
-              width: '100%',
-              height: '100%',
+              background: 'rgba(255,255,255,0.05)',
+              borderRadius: '24px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
+              padding: '32px 40px',
+              minWidth: 360,
+              maxWidth: 420,
+              border: '1.5px solid rgba(255,255,255,0.12)',
               display: 'flex',
-              justifyContent: 'center',
+              flexDirection: 'column',
               alignItems: 'center',
-              backgroundColor: '#ff6b6b',
-              color: 'white',
-              fontSize: '18px'
             }}>
-              ❌ Error loading 3D scene: {error instanceof Error ? error.message : 'Unknown error'}
+              <h2 style={{ color: '#fff', fontWeight: 700, fontSize: 28, marginBottom: 16, letterSpacing: 1 }}>Customize Your Avatar</h2>
+              <AvatarCustomizer />
+              <button
+                style={{
+                  marginTop: 32,
+                  padding: '12px 32px',
+                  fontSize: 18,
+                  fontWeight: 600,
+                  borderRadius: 12,
+                  border: 'none',
+                  background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
+                  color: '#fff',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(76, 119, 175, 0.15)',
+                  transition: 'background 0.2s',
+                }}
+                onClick={() => setShowCustomizer(false)}
+              >
+                Enter World
+              </button>
             </div>
-          )
-        }
-      })()}
-      {/* Chat Overlay */}
-      {!showCustomizer && (() => {
-        try {
-          console.log('💬 Rendering ChatOverlay...')
-          return <ChatOverlay />
-        } catch (error) {
-          console.error('❌ Error rendering ChatOverlay:', error)
-          return null
-        }
-      })()}
-      {/* Interaction Prompt */}
-      {!showCustomizer && showInteractionPrompt && (
-        <div style={{
-          position: 'absolute',
-          bottom: '100px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          backgroundColor: 'rgba(0, 0, 0, 0.8)',
-          color: 'white',
-          padding: '12px 24px',
-          borderRadius: '25px',
-          fontSize: '16px',
-          fontWeight: 'bold',
-          border: '2px solid #4CAF50',
-          animation: 'pulse 2s infinite'
-        }}>
-          {interactionPromptText}
-          <style>
-            {`
-              @keyframes pulse {
-                0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
-                70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
-                100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
-              }
-            `}
-          </style>
-        </div>
-      )}
-      {/* Achievement Notifications */}
-      {!showCustomizer && (
-        <div style={{
-          position: 'absolute',
-          top: '20px',
-          right: '20px',
-          pointerEvents: 'none'
-        }}>
-          {/* Achievement notifications would be rendered here */}
-        </div>
-      )}
-    </div>
+          </div>
+        )}
+        {/* Main 3D World Scene */}
+        {!showCustomizer && (() => {
+          try {
+            console.log('🌍 Rendering BabylonSceneMultiplayer...')
+            console.log('🔧 Debug info:', { isConnected, connectionError, showCustomizer })
+            return <BabylonSceneMultiplayer key={`scene-main-${version}`} />
+          } catch (error) {
+            console.error('❌ Error rendering BabylonSceneMultiplayer:', error)
+            return (
+              <div style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: '#ff6b6b',
+                color: 'white',
+                fontSize: '18px'
+              }}>
+                ❌ Error loading 3D scene: {error instanceof Error ? error.message : 'Unknown error'}
+              </div>
+            )
+          }
+        })()}
+        {/* Chat Overlay */}
+        {!showCustomizer && (() => {
+          try {
+            console.log('💬 Rendering ChatOverlay...')
+            return <ChatOverlay />
+          } catch (error) {
+            console.error('❌ Error rendering ChatOverlay:', error)
+            return null
+          }
+        })()}
+        {/* Interaction Prompt */}
+        {!showCustomizer && showInteractionPrompt && (
+          <div style={{
+            position: 'absolute',
+            bottom: '100px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            color: 'white',
+            padding: '12px 24px',
+            borderRadius: '25px',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            border: '2px solid #4CAF50',
+            animation: 'pulse 2s infinite'
+          }}>
+            {interactionPromptText}
+            <style>
+              {`
+                @keyframes pulse {
+                  0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
+                  70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
+                  100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
+                }
+              `}
+            </style>
+          </div>
+        )}
+        {/* Achievement Notifications */}
+        {!showCustomizer && (
+          <div style={{
+            position: 'absolute',
+            top: '20px',
+            right: '20px',
+            pointerEvents: 'none'
+          }}>
+            {/* Achievement notifications would be rendered here */}
+          </div>
+        )}
+      </div>
+    </ErrorBoundary>
   )
 }
 
