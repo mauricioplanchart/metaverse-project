@@ -79,6 +79,21 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
       const key = event.key.toLowerCase();
       keysRef.current[key] = true;
       setIsMoving(true);
+      
+      // Handle jump
+      if (key === ' ' || key === 'space') {
+        console.log('🚶 Jump triggered!');
+        if (currentUserAvatar && currentUserAvatar.mesh && currentUserAvatar.mesh.avatarAnimations) {
+          scene.beginDirectAnimation(
+            currentUserAvatar.mesh, 
+            [currentUserAvatar.mesh.avatarAnimations.jump], 
+            0, 
+            30, 
+            false
+          );
+        }
+      }
+      
       console.log('🚶 Key pressed:', key, 'Keys state:', keysRef.current);
       console.log('🚶 Event details:', {
         key: event.key,
@@ -168,6 +183,17 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
         // Update avatar position in 3D scene (if mesh exists)
         if (currentUserAvatar && currentUserAvatar.mesh) {
           currentUserAvatar.mesh.position = newPosition;
+          
+          // Play walking animation
+          if (currentUserAvatar.mesh.avatarAnimations && currentUserAvatar.mesh.avatarAnimations.walk) {
+            scene.beginDirectAnimation(
+              currentUserAvatar.mesh, 
+              [currentUserAvatar.mesh.avatarAnimations.walk], 
+              0, 
+              60, 
+              true
+            );
+          }
         }
 
         // Send position update to server
@@ -175,6 +201,17 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
           position: newPosition,
           timestamp: Date.now()
         });
+      } else {
+        // If not moving, play idle animation
+        if (currentUserAvatar && currentUserAvatar.mesh && currentUserAvatar.mesh.avatarAnimations) {
+          scene.beginDirectAnimation(
+            currentUserAvatar.mesh, 
+            [currentUserAvatar.mesh.avatarAnimations.idle], 
+            0, 
+            60, 
+            true
+          );
+        }
       }
     };
 
