@@ -1,8 +1,10 @@
 [build]
+  base = "client"
   publish = "dist"
   command = "npm run build"
 
 [build.environment]
+  NODE_VERSION = "18"
   VITE_SERVER_URL = "https://metaverse-project-2.onrender.com"
   VITE_APP_NAME = "Metaverse"
   VITE_APP_VERSION = "1.0.0"
