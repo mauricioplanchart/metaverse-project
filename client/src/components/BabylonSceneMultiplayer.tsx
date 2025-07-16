@@ -93,12 +93,13 @@ const BabylonSceneMultiplayer: React.FC = () => {
       const skybox = BABYLON.MeshBuilder.CreateBox('skyBox', { size: 1000.0 }, scene);
       const skyboxMaterial = new BABYLON.StandardMaterial('skyBox', scene);
       skyboxMaterial.backFaceCulling = false;
-      skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture('https://playground.babylonjs.com/textures/skybox/TropicalSunnyDay', scene);
-      skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
-      skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+      
+      // Use a simple gradient skybox instead of external textures
+      skyboxMaterial.diffuseColor = new BABYLON.Color3(0.5, 0.7, 1.0); // Light blue
       skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+      skyboxMaterial.emissiveColor = new BABYLON.Color3(0.2, 0.4, 0.6); // Darker blue glow
       skybox.material = skyboxMaterial;
-      console.log('🌅 Beautiful tropical skybox created');
+      console.log('🌅 Beautiful gradient skybox created');
 
       // Add ambient light for better atmosphere
       const ambientLight = new BABYLON.HemisphericLight(
@@ -117,14 +118,12 @@ const BabylonSceneMultiplayer: React.FC = () => {
         height: 20
       }, scene);
       
-      // Add ground texture
+      // Add ground material with color instead of texture
       const groundMaterial = new BABYLON.StandardMaterial('groundMat', scene);
-      const groundTexture = new BABYLON.Texture('https://playground.babylonjs.com/textures/grass.jpg', scene);
-      groundTexture.uScale = 4;
-      groundTexture.vScale = 4;
-      groundMaterial.diffuseTexture = groundTexture;
+      groundMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.6, 0.2); // Green color
+      groundMaterial.specularColor = new BABYLON.Color3(0.1, 0.3, 0.1);
       ground.material = groundMaterial;
-      console.log('🌱 Ground texture applied');
+      console.log('🌱 Ground material applied');
 
       // Create a simple box
       const box = BABYLON.MeshBuilder.CreateBox('box', {
