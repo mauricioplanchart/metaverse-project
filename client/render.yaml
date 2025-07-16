@@ -8,7 +8,50 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 10000
+      - key: CORS_ORIGIN
+        value: "*"
       - key: DATABASE_URL
         sync: false  # Will be set manually
-    healthCheckPath: /health
-    autoDeploy: true 
+    healthCheckPath: /
+    autoDeploy: true
+    numInstances: 1
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
+
+  - type: web
+    name: metaverse-backend-staging
+    env: node
+    plan: free
+    buildCommand: cd server && npm install && npm run build
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: staging
+      - key: PORT
+        value: 10000
+      - key: CORS_ORIGIN
+        value: "*"
+    healthCheckPath: /
+    autoDeploy: true
+    numInstances: 1
+
+  - type: web
+    name: metaverse-backend-dev
+    env: node
+    plan: free
+    buildCommand: cd server && npm install && npm run build
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: development
+      - key: PORT
+        value: 10000
+      - key: CORS_ORIGIN
+        value: "*"
+    healthCheckPath: /
+    autoDeploy: true
+    numInstances: 1 

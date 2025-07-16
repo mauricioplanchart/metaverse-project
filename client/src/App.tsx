@@ -8,6 +8,7 @@ import { socketService } from './lib/socketService'
 import { AvatarCustomizer } from './components/AvatarCustomizer'
 import ErrorBoundary from './components/ErrorBoundary'
 import UserConnectionStatus from './components/UserConnectionStatus'
+import ConnectionDebug from './components/ConnectionDebug'
 
 const App: React.FC = () => {
   const [connectionError, setConnectionError] = useState<string | null>(null)
@@ -69,6 +70,7 @@ const App: React.FC = () => {
         console.log('✅ Connected to server')
         console.log('🔧 Setting isConnected to true')
         setConnected(true)
+        setConnectionError(null) // Clear any connection errors
         console.log('🔧 isConnected should now be true')
       })
 
@@ -226,6 +228,17 @@ const App: React.FC = () => {
           setConnected(true)
           setConnectionError(null) // Clear any previous errors
           setConnectionStep('joining-world');
+        } else {
+          console.log('⚠️ Socket connection completed but socket is not connected')
+          // Wait a bit and check again
+          setTimeout(() => {
+            if (socketService.isConnected) {
+              console.log('🔧 Socket connected after delay, updating state')
+              setConnected(true)
+              setConnectionError(null)
+              setConnectionStep('joining-world');
+            }
+          }, 1000);
         }
         
         // Join the default world
@@ -270,7 +283,7 @@ const App: React.FC = () => {
     return () => clearTimeout(timeout);
   }, [isConnected, connectionError, forceProceed]);
 
-  // Additional debug logging
+  // Additional debug logging and connection state sync
   useEffect(() => {
     console.log('🔧 App state update:', {
       isConnected,
@@ -279,7 +292,30 @@ const App: React.FC = () => {
       socketConnected: socketService.isConnected,
       isInitialized
     });
+    
+    // Sync connection state if there's a mismatch
+    if (socketService.isConnected && !isConnected && !connectionError) {
+      console.log('🔧 Syncing connection state - socket is connected but state shows disconnected')
+      setConnected(true)
+      setConnectionError(null)
+    } else if (!socketService.isConnected && isConnected) {
+      console.log('🔧 Syncing connection state - socket is disconnected but state shows connected')
+      setConnected(false)
+    }
   }, [isConnected, connectionError, forceProceed, isInitialized]);
+
+  // Periodic connection state check
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (isInitialized && socketService.isConnected && !isConnected) {
+        console.log('🔧 Periodic check: Socket is connected but state is not, fixing...')
+        setConnected(true)
+        setConnectionError(null)
+      }
+    }, 2000); // Check every 2 seconds
+
+    return () => clearInterval(interval);
+  }, [isInitialized, isConnected]);
 
   if (debugMode) {
     return (
@@ -498,6 +534,11 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
+        <ConnectionDebug 
+          isConnected={isConnected}
+          connectionError={connectionError}
+          isInitialized={isInitialized}
+        />
         {/* Avatar Customizer Modal */}
         {showCustomizer && (
           <div style={{

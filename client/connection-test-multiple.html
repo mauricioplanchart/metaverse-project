@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiple Connection Tests</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .warning { background: #fff3cd; color: #856404; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        #log { background: #f8f9fa; padding: 10px; border-radius: 5px; height: 400px; overflow-y: auto; }
+        .connection-test { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .test-results { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Multiple Connection Tests</h1>
+    
+    <div class="connection-test">
+        <h3>1. Simple Socket.IO Test</h3>
+        <button onclick="testSimpleSocketIO()">Test Simple Socket.IO</button>
+        <div id="simple-socketio-result" class="test-results"></div>
+    </div>
+
+    <div class="connection-test">
+        <h3>2. WebSocket Test</h3>
+        <button onclick="testWebSocket()">Test WebSocket</button>
+        <div id="websocket-result" class="test-results"></div>
+    </div>
+
+    <div class="connection-test">
+        <h3>3. Connection Manager Test</h3>
+        <button onclick="testConnectionManager()">Test Connection Manager</button>
+        <div id="connection-manager-result" class="test-results"></div>
+    </div>
+
+    <div class="connection-test">
+        <h3>4. Fallback Test</h3>
+        <button onclick="testFallback()">Test Fallback Strategy</button>
+        <div id="fallback-result" class="test-results"></div>
+    </div>
+
+    <button onclick="clearLog()">Clear Log</button>
+    <div id="log"></div>
+
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+        let simpleSocket = null;
+        let ws = null;
+        let connectionManagerSocket = null;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info';
+            logDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function updateResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        // 1. Simple Socket.IO Test
+        async function testSimpleSocketIO() {
+            log('🔌 Testing Simple Socket.IO connection...', 'info');
+            updateResult('simple-socketio-result', 'Testing...', 'info');
+
+            try {
+                if (simpleSocket?.connected) {
+                    simpleSocket.disconnect();
+                }
+
+                simpleSocket = io('http://localhost:3001', {
+                    transports: ['websocket', 'polling'],
+                    timeout: 10000,
+                    forceNew: true,
+                    reconnection: false
+                });
+
+                const connected = await new Promise((resolve) => {
+                    simpleSocket.on('connect', () => {
+                        log('✅ Simple Socket.IO connected!', 'success');
+                        updateResult('simple-socketio-result', '✅ Connected successfully!', 'success');
+                        resolve(true);
+                    });
+
+                    simpleSocket.on('connect_error', (error) => {
+                        log(`❌ Simple Socket.IO error: ${error.message}`, 'error');
+                        updateResult('simple-socketio-result', `❌ Error: ${error.message}`, 'error');
+                        resolve(false);
+                    });
+
+                    setTimeout(() => {
+                        if (!simpleSocket.connected) {
+                            log('⏰ Simple Socket.IO timeout', 'warning');
+                            updateResult('simple-socketio-result', '⏰ Connection timeout', 'warning');
+                            resolve(false);
+                        }
+                    }, 10000);
+                });
+
+                return connected;
+            } catch (error) {
+                log(`❌ Simple Socket.IO test failed: ${error.message}`, 'error');
+                updateResult('simple-socketio-result', `❌ Test failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // 2. WebSocket Test
+        async function testWebSocket() {
+            log('🔌 Testing WebSocket connection...', 'info');
+            updateResult('websocket-result', 'Testing...', 'info');
+
+            try {
+                if (ws) {
+                    ws.close();
+                }
+
+                ws = new WebSocket('ws://localhost:3001');
+
+                const connected = await new Promise((resolve) => {
+                    ws.onopen = () => {
+                        log('✅ WebSocket connected!', 'success');
+                        updateResult('websocket-result', '✅ Connected successfully!', 'success');
+                        resolve(true);
+                    };
+
+                    ws.onerror = (error) => {
+                        log(`❌ WebSocket error: ${error}`, 'error');
+                        updateResult('websocket-result', '❌ Connection error', 'error');
+                        resolve(false);
+                    };
+
+                    ws.onclose = (event) => {
+                        log(`❌ WebSocket closed: ${event.code} - ${event.reason}`, 'error');
+                        updateResult('websocket-result', `❌ Closed: ${event.code}`, 'error');
+                        resolve(false);
+                    };
+
+                    setTimeout(() => {
+                        if (ws.readyState === WebSocket.CONNECTING) {
+                            log('⏰ WebSocket timeout', 'warning');
+                            updateResult('websocket-result', '⏰ Connection timeout', 'warning');
+                            resolve(false);
+                        }
+                    }, 10000);
+                });
+
+                return connected;
+            } catch (error) {
+                log(`❌ WebSocket test failed: ${error.message}`, 'error');
+                updateResult('websocket-result', `❌ Test failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // 3. Connection Manager Test
+        async function testConnectionManager() {
+            log('🔌 Testing Connection Manager...', 'info');
+            updateResult('connection-manager-result', 'Testing...', 'info');
+
+            try {
+                if (connectionManagerSocket?.connected) {
+                    connectionManagerSocket.disconnect();
+                }
+
+                connectionManagerSocket = io('http://localhost:3001', {
+                    transports: ['polling'],
+                    timeout: 10000,
+                    forceNew: true,
+                    reconnection: false
+                });
+
+                const connected = await new Promise((resolve) => {
+                    connectionManagerSocket.on('connect', () => {
+                        log('✅ Connection Manager (polling) connected!', 'success');
+                        updateResult('connection-manager-result', '✅ Connected via polling!', 'success');
+                        resolve(true);
+                    });
+
+                    connectionManagerSocket.on('connect_error', (error) => {
+                        log(`❌ Connection Manager error: ${error.message}`, 'error');
+                        updateResult('connection-manager-result', `❌ Error: ${error.message}`, 'error');
+                        resolve(false);
+                    });
+
+                    setTimeout(() => {
+                        if (!connectionManagerSocket.connected) {
+                            log('⏰ Connection Manager timeout', 'warning');
+                            updateResult('connection-manager-result', '⏰ Connection timeout', 'warning');
+                            resolve(false);
+                        }
+                    }, 10000);
+                });
+
+                return connected;
+            } catch (error) {
+                log(`❌ Connection Manager test failed: ${error.message}`, 'error');
+                updateResult('connection-manager-result', `❌ Test failed: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        // 4. Fallback Test
+        async function testFallback() {
+            log('🔌 Testing Fallback Strategy...', 'info');
+            updateResult('fallback-result', 'Testing...', 'info');
+
+            const methods = [
+                { name: 'Socket.IO', test: testSimpleSocketIO },
+                { name: 'WebSocket', test: testWebSocket },
+                { name: 'Polling', test: testConnectionManager }
+            ];
+
+            for (const method of methods) {
+                log(`🔄 Trying ${method.name}...`, 'info');
+                const connected = await method.test();
+                
+                if (connected) {
+                    log(`✅ ${method.name} worked!`, 'success');
+                    updateResult('fallback-result', `✅ Connected via ${method.name}!`, 'success');
+                    return true;
+                } else {
+                    log(`❌ ${method.name} failed, trying next...`, 'warning');
+                }
+            }
+
+            log('❌ All connection methods failed', 'error');
+            updateResult('fallback-result', '❌ All methods failed', 'error');
+            return false;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            log('🚀 Page loaded, ready to test connections...');
+        });
+    </script>
+</body>
+</html> 

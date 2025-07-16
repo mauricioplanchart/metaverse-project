@@ -20,6 +20,11 @@ export const config = {
   }
 };
 
+// Force local backend for local dev
+// const isLocalhost = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+export const BACKEND_URL = 'https://metaverse-project-2.onrender.com';
+
 // Helper function to get the correct server URL
 export const getServerUrl = () => {
   console.log('🔧 Config debug:', {
