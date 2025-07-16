@@ -80,6 +80,12 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
       keysRef.current[key] = true;
       setIsMoving(true);
       console.log('🚶 Key pressed:', key, 'Keys state:', keysRef.current);
+      console.log('🚶 Event details:', {
+        key: event.key,
+        code: event.code,
+        keyCode: event.keyCode,
+        which: event.which
+      });
     };
 
     const handleKeyUp = (event: KeyboardEvent) => {
@@ -90,32 +96,68 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
       const movementKeys = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
       const anyKeyPressed = movementKeys.some(k => keysRef.current[k]);
       setIsMoving(anyKeyPressed);
+      console.log('🚶 Key released:', key, 'Keys state:', keysRef.current, 'Any movement key pressed:', anyKeyPressed);
+    };
+
+    // Test if the canvas is capturing focus
+    const handleCanvasFocus = () => {
+      console.log('🚶 Canvas focused - keys should work now');
+    };
+
+    const handleCanvasBlur = () => {
+      console.log('🚶 Canvas lost focus - keys might not work');
     };
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
+    
+    // Add a global test listener to see if ANY keys are being detected
+    const globalKeyTest = (event: KeyboardEvent) => {
+      console.log('🚶 GLOBAL KEY TEST - Key pressed:', event.key, 'Code:', event.code);
+    };
+    window.addEventListener('keydown', globalKeyTest);
+    
+    // Try to focus the canvas for key events
+    const canvas = document.querySelector('canvas');
+    if (canvas) {
+      canvas.addEventListener('focus', handleCanvasFocus);
+      canvas.addEventListener('blur', handleCanvasBlur);
+      canvas.focus();
+      console.log('🚶 Attempting to focus canvas for key events');
+    }
 
     // Movement loop
     const movementLoop = () => {
       let moved = false;
       const newPosition = position.clone();
 
+      // Debug: Log current key state
+      const movementKeys = ['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
+      const pressedKeys = movementKeys.filter(k => keysRef.current[k]);
+      if (pressedKeys.length > 0) {
+        console.log('🚶 Movement loop - pressed keys:', pressedKeys);
+      }
+
       // WASD movement
       if (keysRef.current['w'] || keysRef.current['arrowup']) {
         newPosition.z -= movementSpeed;
         moved = true;
+        console.log('🚶 Moving forward (W/Up)');
       }
       if (keysRef.current['s'] || keysRef.current['arrowdown']) {
         newPosition.z += movementSpeed;
         moved = true;
+        console.log('🚶 Moving backward (S/Down)');
       }
       if (keysRef.current['a'] || keysRef.current['arrowleft']) {
         newPosition.x -= movementSpeed;
         moved = true;
+        console.log('🚶 Moving left (A/Left)');
       }
       if (keysRef.current['d'] || keysRef.current['arrowright']) {
         newPosition.x += movementSpeed;
         moved = true;
+        console.log('🚶 Moving right (D/Right)');
       }
 
       // Update position if moved
