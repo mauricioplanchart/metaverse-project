@@ -3,20 +3,16 @@ import { useMetaverseStore } from '../stores/useMetaverseStore';
 import { socketService } from '../lib/socketService';
 
 interface ProximityChatProps {
-  scene: any; // Babylon.js scene
   currentUserPosition: any; // Current user's position
   userAvatars: any[]; // All user avatars
 }
 
 const ProximityChat: React.FC<ProximityChatProps> = ({ 
-  scene, 
   currentUserPosition, 
   userAvatars 
 }) => {
   const { 
-    currentUserId, 
-    currentUser, 
-    addChatMessage 
+    currentUserId
   } = useMetaverseStore();
   
   const [nearbyAvatar, setNearbyAvatar] = useState<any>(null);

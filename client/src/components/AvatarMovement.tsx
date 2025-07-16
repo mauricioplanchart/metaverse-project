@@ -23,7 +23,6 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
     if (!scene || !camera || !currentUserAvatar) return;
 
     const keys: { [key: string]: boolean } = {};
-    let lastPosition = position.clone();
 
     // Handle keyboard input
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -76,8 +75,6 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
           position: newPosition,
           timestamp: Date.now()
         });
-
-        lastPosition = newPosition.clone();
       }
     };
 
