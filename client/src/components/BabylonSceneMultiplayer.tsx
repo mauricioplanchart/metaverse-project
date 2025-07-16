@@ -118,12 +118,29 @@ const BabylonSceneMultiplayer: React.FC = () => {
         height: 20
       }, scene);
       
-      // Add ground material with color instead of texture
+      // Create realistic grass ground
       const groundMaterial = new BABYLON.StandardMaterial('groundMat', scene);
-      groundMaterial.diffuseColor = new BABYLON.Color3(0.2, 0.6, 0.2); // Green color
-      groundMaterial.specularColor = new BABYLON.Color3(0.1, 0.3, 0.1);
+      
+      // Use a grass-like color palette
+      groundMaterial.diffuseColor = new BABYLON.Color3(0.15, 0.5, 0.15); // Dark green base
+      groundMaterial.specularColor = new BABYLON.Color3(0.05, 0.2, 0.05); // Low specular for grass
+      groundMaterial.ambientColor = new BABYLON.Color3(0.2, 0.6, 0.2); // Ambient green tint
+      
+      // Add some variation to simulate grass patches
+      groundMaterial.emissiveColor = new BABYLON.Color3(0.02, 0.1, 0.02); // Subtle glow
+      
+      // Create a noise texture for grass variation
+      const noiseTexture = new BABYLON.NoiseProceduralTexture('grassNoise', 256, scene);
+      noiseTexture.octaves = 3;
+      noiseTexture.persistence = 0.8;
+      noiseTexture.animationSpeedFactor = 0;
+      
+      // Apply noise to create grass texture effect
+      groundMaterial.diffuseTexture = noiseTexture;
+      groundMaterial.diffuseTexture.level = 0.3; // Subtle effect
+      
       ground.material = groundMaterial;
-      console.log('🌱 Ground material applied');
+      console.log('🌱 Realistic grass ground created with noise texture');
 
       // Create a simple box
       const box = BABYLON.MeshBuilder.CreateBox('box', {
