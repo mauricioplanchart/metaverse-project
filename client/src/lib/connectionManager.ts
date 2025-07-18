@@ -15,7 +15,7 @@ class ConnectionManager {
   private socket: Socket | null = null
   private ws: WebSocket | null = null
   private supabaseChannel: any = null
-  private serverUrl = config.isDevelopment ? 'http://localhost:3001' : 'https://metaverse-project-2.onrender.com'
+  private serverUrl = config.isDevelopment ? 'http://localhost:3001' : null // No production server URL - use Supabase only
   private listeners: Map<string, ((...args: any[]) => void)[]> = new Map()
   private state: ConnectionState = {
     isConnected: false,
@@ -34,33 +34,45 @@ class ConnectionManager {
 
   async connect(type: ConnectionType = 'supabase'): Promise<boolean> {
     if (this.state.isConnecting) {
-      console.log('🔄 Already connecting...')
-      return false
+      console.log('🔄 Already connecting...');
+      return false;
     }
 
-    this.state.isConnecting = true
-    this.state.error = null
-    this.state.type = type
+    this.state.isConnecting = true;
+    this.state.error = null;
 
     try {
       switch (type) {
         case 'supabase':
-          return await this.connectSupabase()
+          return await this.connectSupabase();
         case 'socketio':
-          return await this.connectSocketIO()
+          if (!this.serverUrl) {
+            console.log('⚠️ No server URL configured for Socket.IO');
+            return false;
+          }
+          return await this.connectSocketIO();
         case 'websocket':
-          return await this.connectWebSocket()
+          if (!this.serverUrl) {
+            console.log('⚠️ No server URL configured for WebSocket');
+            return false;
+          }
+          return await this.connectWebSocket();
         case 'polling':
-          return await this.connectPolling()
+          if (!this.serverUrl) {
+            console.log('⚠️ No server URL configured for polling');
+            return false;
+          }
+          return await this.connectPolling();
         default:
-          throw new Error(`Unknown connection type: ${type}`)
+          console.error('❌ Unknown connection type:', type);
+          return false;
       }
     } catch (error) {
-      console.error('❌ Connection failed:', error)
-      this.state.isConnecting = false
-      this.state.error = error instanceof Error ? error.message : 'Unknown error'
-      this.emit('connectionError', this.state.error)
-      return false
+      console.error('❌ Connection error:', error);
+      this.state.error = error instanceof Error ? error.message : 'Unknown error';
+      return false;
+    } finally {
+      this.state.isConnecting = false;
     }
   }
 
@@ -145,11 +157,18 @@ class ConnectionManager {
   }
 
   private async connectSocketIO(): Promise<boolean> {
+    if (!this.serverUrl) {
+      console.log('⚠️ No server URL configured for Socket.IO');
+      return false;
+    }
+
+    const serverUrl = this.serverUrl; // Store in local variable after null check
+
     return new Promise((resolve) => {
       try {
         console.log('🔌 Connecting via Socket.IO...')
         
-        this.socket = io(this.serverUrl, {
+        this.socket = io(serverUrl, {
           transports: ['websocket', 'polling'],
           timeout: 10000,
           forceNew: true,
@@ -200,10 +219,17 @@ class ConnectionManager {
   }
 
   private async connectWebSocket(): Promise<boolean> {
+    if (!this.serverUrl) {
+      console.log('⚠️ No server URL configured for WebSocket');
+      return false;
+    }
+
+    const serverUrl = this.serverUrl; // Store in local variable after null check
+
     return new Promise((resolve) => {
       try {
         console.log('🔌 Connecting via WebSocket...')
-        const wsUrl = this.serverUrl.replace('http', 'ws')
+        const wsUrl = serverUrl.replace('http', 'ws')
         
         this.ws = new WebSocket(wsUrl)
 
@@ -260,11 +286,18 @@ class ConnectionManager {
   }
 
   private async connectPolling(): Promise<boolean> {
+    if (!this.serverUrl) {
+      console.log('⚠️ No server URL configured for polling');
+      return false;
+    }
+
+    const serverUrl = this.serverUrl; // Store in local variable after null check
+
     return new Promise((resolve) => {
       try {
         console.log('🔌 Connecting via polling...')
         
-        this.socket = io(this.serverUrl, {
+        this.socket = io(serverUrl, {
           transports: ['polling'],
           timeout: 10000,
           forceNew: true,
@@ -315,7 +348,13 @@ class ConnectionManager {
   }
 
   async retryWithFallback(): Promise<boolean> {
-    const types: ConnectionType[] = ['supabase', 'socketio', 'websocket', 'polling']
+    // Always try Supabase first, then fallback to other methods only if serverUrl is available
+    const types: ConnectionType[] = ['supabase'];
+    
+    // Only add other connection types if we have a server URL
+    if (this.serverUrl) {
+      types.push('socketio', 'websocket', 'polling');
+    }
     
     for (const type of types) {
       if (this.retryCount >= this.maxRetries) {
