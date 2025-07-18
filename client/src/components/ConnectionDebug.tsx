@@ -1,5 +1,5 @@
 import React from 'react';
-import { socketService } from '../lib/socketService';
+import { metaverseService } from '../lib/metaverseService';
 
 interface ConnectionDebugProps {
   isConnected: boolean;
@@ -28,10 +28,10 @@ const ConnectionDebug: React.FC<ConnectionDebugProps> = ({
     }}>
       <div style={{ fontWeight: 'bold', marginBottom: '5px' }}>🔧 Connection Debug</div>
       <div>React State: {isConnected ? '✅ Connected' : '❌ Disconnected'}</div>
-      <div>Socket Service: {socketService.isConnected ? '✅ Connected' : '❌ Disconnected'}</div>
+      <div>Metaverse Service: {metaverseService.connected ? '✅ Connected' : '❌ Disconnected'}</div>
       <div>Initialized: {isInitialized ? '✅ Yes' : '❌ No'}</div>
-      <div>Socket ID: {socketService.id || 'None'}</div>
-      <div>Server URL: {socketService.serverUrlForDebug}</div>
+      <div>User ID: {metaverseService.id || 'None'}</div>
+      <div>Current User: {metaverseService.currentUser?.username || 'None'}</div>
       {connectionError && (
         <div style={{ color: '#ff6b6b', marginTop: '5px' }}>
           Error: {connectionError}
@@ -40,9 +40,9 @@ const ConnectionDebug: React.FC<ConnectionDebugProps> = ({
       <button
         onClick={() => {
           console.log('🔄 Manual connection attempt');
-          socketService.connect().then(() => {
+          metaverseService.connect().then(() => {
             console.log('✅ Manual connection successful');
-          }).catch((error) => {
+          }).catch((error: any) => {
             console.error('❌ Manual connection failed:', error);
           });
         }}

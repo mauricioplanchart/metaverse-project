@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Connection Test</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.testing {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        .user-list {
+            margin-top: 20px;
+        }
+        .user-item {
+            background-color: #f8f9fa;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 2px 0;
+        }
+        .log-entry.success { color: #28a745; }
+        .log-entry.error { color: #dc3545; }
+        .log-entry.info { color: #17a2b8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Supabase Connection Test</h1>
+        
+        <div id="status" class="status testing">
+            Testing connection...
+        </div>
+
+        <div class="form-group">
+            <label for="supabaseUrl">Supabase URL:</label>
+            <input type="text" id="supabaseUrl" placeholder="https://your-project.supabase.co">
+        </div>
+
+        <div class="form-group">
+            <label for="supabaseKey">Supabase Anon Key:</label>
+            <input type="text" id="supabaseKey" placeholder="your-anon-key">
+        </div>
+
+        <button onclick="testConnection()">Test Connection</button>
+        <button onclick="loadUsers()">Load Users</button>
+        <button onclick="clearLog()">Clear Log</button>
+
+        <div class="form-group">
+            <label for="newUsername">Add Test User:</label>
+            <input type="text" id="newUsername" placeholder="Enter username">
+            <button onclick="addUser()" style="margin-top: 10px;">Add User</button>
+        </div>
+
+        <div id="userList" class="user-list"></div>
+
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        let supabase = null;
+        let subscription = null;
+
+        // Load environment variables from localStorage or use defaults
+        document.getElementById('supabaseUrl').value = localStorage.getItem('supabaseUrl') || '';
+        document.getElementById('supabaseKey').value = localStorage.getItem('supabaseKey') || '';
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function updateStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        function testConnection() {
+            const url = document.getElementById('supabaseUrl').value.trim();
+            const key = document.getElementById('supabaseKey').value.trim();
+
+            if (!url || !key) {
+                updateStatus('Please enter both URL and Key', 'error');
+                log('Missing URL or Key', 'error');
+                return;
+            }
+
+            // Save to localStorage
+            localStorage.setItem('supabaseUrl', url);
+            localStorage.setItem('supabaseKey', key);
+
+            updateStatus('Testing connection...', 'testing');
+            log('Initializing Supabase client...', 'info');
+
+            try {
+                supabase = window.supabase.createClient(url, key);
+                log('Supabase client created', 'success');
+
+                // Test connection by querying users table
+                supabase
+                    .from('users')
+                    .select('*')
+                    .limit(1)
+                    .then(({ data, error }) => {
+                        if (error) {
+                            updateStatus(`Connection failed: ${error.message}`, 'error');
+                            log(`Connection error: ${error.message}`, 'error');
+                        } else {
+                            updateStatus('✅ Connected to Supabase!', 'success');
+                            log('Connection successful!', 'success');
+                            log(`Found ${data.length} users in database`, 'info');
+                            
+                            // Set up real-time subscription
+                            setupRealtimeSubscription();
+                        }
+                    })
+                    .catch(err => {
+                        updateStatus(`Connection failed: ${err.message}`, 'error');
+                        log(`Connection failed: ${err.message}`, 'error');
+                    });
+
+            } catch (err) {
+                updateStatus(`Failed to create client: ${err.message}`, 'error');
+                log(`Client creation failed: ${err.message}`, 'error');
+            }
+        }
+
+        function setupRealtimeSubscription() {
+            if (!supabase) return;
+
+            log('Setting up real-time subscription...', 'info');
+
+            subscription = supabase
+                .channel('users_changes')
+                .on('postgres_changes', 
+                    { event: '*', schema: 'public', table: 'users' },
+                    (payload) => {
+                        log(`Real-time update: ${payload.eventType} on user ${payload.new?.id || payload.old?.id}`, 'info');
+                        loadUsers(); // Refresh the user list
+                    }
+                )
+                .subscribe((status) => {
+                    if (status === 'SUBSCRIBED') {
+                        log('Real-time subscription active', 'success');
+                    } else {
+                        log(`Subscription status: ${status}`, 'info');
+                    }
+                });
+        }
+
+        async function loadUsers() {
+            if (!supabase) {
+                log('No Supabase connection. Test connection first.', 'error');
+                return;
+            }
+
+            log('Loading users...', 'info');
+
+            try {
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    log(`Error loading users: ${error.message}`, 'error');
+                    return;
+                }
+
+                const userListDiv = document.getElementById('userList');
+                userListDiv.innerHTML = '<h3>Current Users:</h3>';
+
+                if (data && data.length > 0) {
+                    data.forEach(user => {
+                        const userDiv = document.createElement('div');
+                        userDiv.className = 'user-item';
+                        userDiv.innerHTML = `
+                            <strong>${user.username}</strong><br>
+                            <small>ID: ${user.id}</small><br>
+                            <small>Online: ${user.is_online ? 'Yes' : 'No'}</small><br>
+                            <small>Created: ${new Date(user.created_at).toLocaleString()}</small>
+                        `;
+                        userListDiv.appendChild(userDiv);
+                    });
+                    log(`Loaded ${data.length} users`, 'success');
+                } else {
+                    userListDiv.innerHTML = '<h3>No users found</h3><p>Add a test user above!</p>';
+                    log('No users found in database', 'info');
+                }
+            } catch (err) {
+                log(`Failed to load users: ${err.message}`, 'error');
+            }
+        }
+
+        async function addUser() {
+            if (!supabase) {
+                log('No Supabase connection. Test connection first.', 'error');
+                return;
+            }
+
+            const username = document.getElementById('newUsername').value.trim();
+            if (!username) {
+                log('Please enter a username', 'error');
+                return;
+            }
+
+            log(`Adding user: ${username}`, 'info');
+
+            try {
+                const { data, error } = await supabase
+                    .from('users')
+                    .insert([
+                        {
+                            username: username,
+                            email: `${username}@test.com`,
+                            is_online: true
+                        }
+                    ])
+                    .select();
+
+                if (error) {
+                    log(`Error adding user: ${error.message}`, 'error');
+                } else {
+                    log(`User added successfully: ${data[0].username}`, 'success');
+                    document.getElementById('newUsername').value = '';
+                    loadUsers(); // Refresh the list
+                }
+            } catch (err) {
+                log(`Failed to add user: ${err.message}`, 'error');
+            }
+        }
+
+        // Auto-test connection if we have saved credentials
+        window.addEventListener('load', () => {
+            const url = document.getElementById('supabaseUrl').value;
+            const key = document.getElementById('supabaseKey').value;
+            
+            if (url && key) {
+                log('Found saved credentials, testing connection...', 'info');
+                setTimeout(testConnection, 1000);
+            }
+        });
+    </script>
+</body>
+</html> 

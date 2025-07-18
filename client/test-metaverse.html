@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metaverse Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        .warning { color: orange; font-weight: bold; }
+        .info { color: blue; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.success { background: #d4edda; border: 1px solid #c3e6cb; }
+        .status.error { background: #f8d7da; border: 1px solid #f5c6cb; }
+        .status.warning { background: #fff3cd; border: 1px solid #ffeaa7; }
+    </style>
+</head>
+<body>
+    <h1>🌐 Metaverse Test Suite</h1>
+    
+    <div class="test-section">
+        <h2>🔧 Environment Check</h2>
+        <div id="env-info"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🔌 Connection Tests</h2>
+        <button onclick="testSupabaseConnection()">Test Supabase Connection</button>
+        <button onclick="testRealtimeConnection()">Test Realtime Connection</button>
+        <button onclick="testDatabaseTables()">Test Database Tables</button>
+        <div id="connection-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎮 Metaverse Features</h2>
+        <button onclick="testAvatarSystem()">Test Avatar System</button>
+        <button onclick="testChatSystem()">Test Chat System</button>
+        <button onclick="testWorldSystem()">Test World System</button>
+        <div id="feature-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Performance Test</h2>
+        <button onclick="testPerformance()">Run Performance Test</button>
+        <div id="performance-results"></div>
+    </div>
+
+    <script type="module">
+        // Import Supabase client
+        import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js';
+
+        // Configuration
+        const SUPABASE_URL = 'https://jnvbqcaweufmfswpnacv.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpudmJxY2F3ZXVmbWZzd3BuYWN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0ODk0MDMsImV4cCI6MjA2NzA2NTQwM30.8ayePMQr6ISfYWqkrjHDY7d1CKroVOQONCl6Ge2ApE4';
+
+        // Create Supabase client
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+            realtime: {
+                params: {
+                    eventsPerSecond: 10,
+                },
+            },
+            auth: {
+                autoRefreshToken: true,
+                persistSession: true,
+                detectSessionInUrl: true
+            },
+            global: {
+                headers: {
+                    'X-Client-Info': 'metaverse-client'
+                }
+            }
+        });
+
+        // Display environment info
+        function displayEnvInfo() {
+            const envInfo = document.getElementById('env-info');
+            envInfo.innerHTML = `
+                <div class="status success">
+                    <p><strong>✅ Environment Ready</strong></p>
+                    <p><strong>Supabase URL:</strong> <span class="info">${SUPABASE_URL}</span></p>
+                    <p><strong>Current Origin:</strong> <span class="info">${window.location.origin}</span></p>
+                    <p><strong>User Agent:</strong> <span class="info">${navigator.userAgent.substring(0, 50)}...</span></p>
+                    <p><strong>Browser:</strong> <span class="info">${navigator.userAgent.includes('Chrome') ? 'Chrome' : navigator.userAgent.includes('Firefox') ? 'Firefox' : navigator.userAgent.includes('Safari') ? 'Safari' : 'Other'}</span></p>
+                </div>
+            `;
+        }
+
+        // Test Supabase connection
+        window.testSupabaseConnection = async function() {
+            const results = document.getElementById('connection-results');
+            results.innerHTML = '<div class="status warning">Testing Supabase connection...</div>';
+
+            try {
+                const { data, error } = await supabase.from('users').select('*').limit(1);
+                
+                if (error) {
+                    results.innerHTML = `<div class="status error">❌ Connection Error: ${error.message}</div>`;
+                    if (error.code) {
+                        results.innerHTML += `<p class="error">Error Code: ${error.code}</p>`;
+                    }
+                } else {
+                    results.innerHTML = `<div class="status success">✅ Supabase connection successful!</div>`;
+                    results.innerHTML += `<p class="info">Data: ${JSON.stringify(data, null, 2)}</p>`;
+                }
+            } catch (err) {
+                results.innerHTML = `<div class="status error">❌ Exception: ${err.message}</div>`;
+                console.error('Connection test error:', err);
+            }
+        };
+
+        // Test realtime connection
+        window.testRealtimeConnection = async function() {
+            const results = document.getElementById('connection-results');
+            results.innerHTML += '<div class="status warning">Testing realtime connection...</div>';
+
+            try {
+                const channel = supabase.channel('test-channel');
+                
+                channel
+                    .on('presence', { event: 'sync' }, () => {
+                        results.innerHTML += `<div class="status success">✅ Realtime presence sync successful!</div>`;
+                    })
+                    .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+                        results.innerHTML += `<div class="status success">✅ Realtime join event received!</div>`;
+                    })
+                    .subscribe((status) => {
+                        results.innerHTML += `<p class="info">Realtime Status: ${status}</p>`;
+                        if (status === 'SUBSCRIBED') {
+                            results.innerHTML += `<div class="status success">✅ Realtime subscription successful!</div>`;
+                        }
+                    });
+
+                // Clean up after 5 seconds
+                setTimeout(() => {
+                    supabase.removeChannel(channel);
+                    results.innerHTML += `<p class="info">Realtime test completed</p>`;
+                }, 5000);
+
+            } catch (err) {
+                results.innerHTML += `<div class="status error">❌ Realtime Error: ${err.message}</div>`;
+                console.error('Realtime test error:', err);
+            }
+        };
+
+        // Test database tables
+        window.testDatabaseTables = async function() {
+            const results = document.getElementById('connection-results');
+            results.innerHTML += '<div class="status warning">Testing database tables...</div>';
+
+            const tables = ['users', 'avatars', 'chat_messages', 'world_states'];
+            let allTablesWorking = true;
+
+            for (const table of tables) {
+                try {
+                    const { data, error } = await supabase
+                        .from(table)
+                        .select('*')
+                        .limit(1);
+
+                    if (error) {
+                        results.innerHTML += `<div class="status error">❌ ${table} table error: ${error.message}</div>`;
+                        allTablesWorking = false;
+                    } else {
+                        results.innerHTML += `<div class="status success">✅ ${table} table accessible</div>`;
+                    }
+                } catch (err) {
+                    results.innerHTML += `<div class="status error">❌ ${table} table error: ${err.message}</div>`;
+                    allTablesWorking = false;
+                }
+            }
+
+            if (allTablesWorking) {
+                results.innerHTML += `<div class="status success">🎉 All database tables are working!</div>`;
+            }
+        };
+
+        // Test avatar system
+        window.testAvatarSystem = async function() {
+            const results = document.getElementById('feature-results');
+            results.innerHTML = '<div class="status warning">Testing avatar system...</div>';
+
+            try {
+                // Test avatar position update
+                const { error } = await supabase
+                    .from('avatars')
+                    .upsert({
+                        userId: 'test-user-' + Date.now(),
+                        username: 'TestUser',
+                        position: { x: 0, y: 0, z: 0 },
+                        rotation: { x: 0, y: 0, z: 0 },
+                        worldId: 'test-world',
+                        timestamp: Date.now(),
+                        isOnline: true,
+                    });
+
+                if (error) {
+                    results.innerHTML = `<div class="status error">❌ Avatar system error: ${error.message}</div>`;
+                } else {
+                    results.innerHTML = `<div class="status success">✅ Avatar system working!</div>`;
+                }
+            } catch (err) {
+                results.innerHTML = `<div class="status error">❌ Avatar system error: ${err.message}</div>`;
+            }
+        };
+
+        // Test chat system
+        window.testChatSystem = async function() {
+            const results = document.getElementById('feature-results');
+            results.innerHTML += '<div class="status warning">Testing chat system...</div>';
+
+            try {
+                const { error } = await supabase
+                    .from('chat_messages')
+                    .insert({
+                        userId: 'test-user-' + Date.now(),
+                        username: 'TestUser',
+                        message: 'Hello from test!',
+                        worldId: 'test-world',
+                        timestamp: Date.now(),
+                        type: 'text',
+                    });
+
+                if (error) {
+                    results.innerHTML += `<div class="status error">❌ Chat system error: ${error.message}</div>`;
+                } else {
+                    results.innerHTML += `<div class="status success">✅ Chat system working!</div>`;
+                }
+            } catch (err) {
+                results.innerHTML += `<div class="status error">❌ Chat system error: ${err.message}</div>`;
+            }
+        };
+
+        // Test world system
+        window.testWorldSystem = async function() {
+            const results = document.getElementById('feature-results');
+            results.innerHTML += '<div class="status warning">Testing world system...</div>';
+
+            try {
+                const { error } = await supabase
+                    .from('world_states')
+                    .upsert({
+                        worldId: 'test-world-' + Date.now(),
+                        name: 'Test World',
+                        description: 'Test world for metaverse',
+                        maxPlayers: 100,
+                        currentPlayers: 1,
+                        isActive: true,
+                        lastUpdated: Date.now(),
+                    });
+
+                if (error) {
+                    results.innerHTML += `<div class="status error">❌ World system error: ${error.message}</div>`;
+                } else {
+                    results.innerHTML += `<div class="status success">✅ World system working!</div>`;
+                }
+            } catch (err) {
+                results.innerHTML += `<div class="status error">❌ World system error: ${err.message}</div>`;
+            }
+        };
+
+        // Test performance
+        window.testPerformance = async function() {
+            const results = document.getElementById('performance-results');
+            results.innerHTML = '<div class="status warning">Running performance test...</div>';
+
+            const startTime = performance.now();
+            let successCount = 0;
+            let errorCount = 0;
+
+            // Run multiple concurrent requests
+            const promises = [];
+            for (let i = 0; i < 5; i++) {
+                promises.push(
+                    supabase.from('users').select('*').limit(1)
+                        .then(() => successCount++)
+                        .catch(() => errorCount++)
+                );
+            }
+
+            await Promise.all(promises);
+            const endTime = performance.now();
+            const duration = endTime - startTime;
+
+            results.innerHTML = `
+                <div class="status success">✅ Performance test completed!</div>
+                <p><strong>Duration:</strong> ${duration.toFixed(2)}ms</p>
+                <p><strong>Successful requests:</strong> ${successCount}</p>
+                <p><strong>Failed requests:</strong> ${errorCount}</p>
+                <p><strong>Average response time:</strong> ${(duration / 5).toFixed(2)}ms</p>
+            `;
+        };
+
+        // Initialize
+        displayEnvInfo();
+    </script>
+</body>
+</html> 

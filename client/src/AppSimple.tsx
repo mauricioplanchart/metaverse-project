@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react'
-import BabylonSceneMultiplayer from './components/BabylonSceneMultiplayer'
-import ChatOverlay from './components/ChatOverlay'
+import React, { useState, useEffect } from 'react';
+import BabylonSceneMultiplayer from './components/BabylonSceneMultiplayer';
+import ChatOverlay from './components/ChatOverlay';
 import { useMetaverseStore } from './stores/useMetaverseStore'
-import { simpleSocketService } from './lib/simpleSocketService'
+import { metaverseService } from './lib/metaverseService';
 import { AvatarCustomizer } from './components/AvatarCustomizer'
 import ErrorBoundary from './components/ErrorBoundary'
 import UserConnectionStatus from './components/UserConnectionStatus'
@@ -44,26 +44,15 @@ const AppSimple: React.FC = () => {
       setConnectionError(null)
 
       try {
-        const connected = await simpleSocketService.connect()
+        await metaverseService.connect()
+        console.log('✅ Connection successful')
+        setIsConnected(true)
+        setConnected(true)
+        setConnectionError(null)
         
-        if (connected) {
-          console.log('✅ Connection successful')
-          setIsConnected(true)
-          setConnected(true)
-          setConnectionError(null)
-          
-          // Join world
-          const username = `Player_${Math.random().toString(36).substr(2, 6)}`
-          simpleSocketService.emit('join-world', {
-            worldId: 'main-world',
-            username: username
-          })
-        } else {
-          console.log('❌ Connection failed')
-          setIsConnected(false)
-          setConnected(false)
-          setConnectionError('Failed to connect to server')
-        }
+        // Join world
+        const username = `Player_${Math.random().toString(36).substr(2, 6)}`
+        metaverseService.joinWorld('main-world', username)
       } catch (error) {
         console.error('❌ Connection error:', error)
         setIsConnected(false)
@@ -95,12 +84,12 @@ const AppSimple: React.FC = () => {
       setConnected(false)
     }
 
-    simpleSocketService.on('connectionChanged', handleConnectionChange)
-    simpleSocketService.on('connectionError', handleConnectionError)
+    metaverseService.on('connectionChanged', handleConnectionChange)
+    metaverseService.on('connectionError', handleConnectionError)
 
     return () => {
-      simpleSocketService.off('connectionChanged', handleConnectionError)
-      simpleSocketService.off('connectionError', handleConnectionError)
+      metaverseService.off('connectionChanged', handleConnectionError)
+      metaverseService.off('connectionError', handleConnectionError)
     }
   }, [setConnected])
 
@@ -126,16 +115,16 @@ const AppSimple: React.FC = () => {
       addChatMessage(message)
     }
 
-    simpleSocketService.on('user-id', handleUserId)
-    simpleSocketService.on('user-joined', handleUserJoined)
-    simpleSocketService.on('user-left', handleUserLeft)
-    simpleSocketService.on('chat-message', handleChatMessage)
+    metaverseService.on('user-id', handleUserId)
+    metaverseService.on('user-joined', handleUserJoined)
+    metaverseService.on('user-left', handleUserLeft)
+    metaverseService.on('chat-message', handleChatMessage)
 
     return () => {
-      simpleSocketService.off('user-id', handleUserId)
-      simpleSocketService.off('user-joined', handleUserJoined)
-      simpleSocketService.off('user-left', handleUserLeft)
-      simpleSocketService.off('chat-message', handleChatMessage)
+      metaverseService.off('user-id', handleUserId)
+      metaverseService.off('user-joined', handleUserJoined)
+      metaverseService.off('user-left', handleUserLeft)
+      metaverseService.off('chat-message', handleChatMessage)
     }
   }, [setCurrentUserId, updateUser, removeUser, addChatMessage])
 
@@ -155,7 +144,7 @@ const AppSimple: React.FC = () => {
       }}>
         <h1 style={{ fontSize: '24px', marginBottom: '20px' }}>🎮 Debug Mode</h1>
         <div style={{ fontSize: '16px', marginBottom: '10px' }}>
-          Socket Connected: {simpleSocketService.isConnected ? '✅' : '❌'}
+          Socket Connected: {metaverseService.connected ? '✅' : '❌'}
         </div>
         <div style={{ fontSize: '16px', marginBottom: '10px' }}>
           Is Connected: {isConnected ? 'Yes' : 'No'}
@@ -169,7 +158,7 @@ const AppSimple: React.FC = () => {
         <button
           onClick={() => {
             setConnectionError(null)
-            simpleSocketService.connect()
+            metaverseService.connect()
           }}
           style={{
             padding: '10px 20px',
@@ -272,7 +261,7 @@ const AppSimple: React.FC = () => {
         <button
           onClick={() => {
             setConnectionError(null)
-            simpleSocketService.connect()
+            metaverseService.connect()
           }}
           style={{
             padding: '12px 24px',

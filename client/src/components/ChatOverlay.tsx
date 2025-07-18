@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useMetaverseStore } from '../stores/useMetaverseStore'
-import { socketService } from '../lib/socketService'
+import { metaverseService } from '../lib/metaverseService'
 import { ChatMessage } from '../../../shared/types'
 
 const ChatOverlay: React.FC = () => {
@@ -68,12 +68,12 @@ const ChatOverlay: React.FC = () => {
       }))
     }
 
-    socketService.on('user-typing', handleTypingUpdate)
-    socketService.on('message-reaction-updated', handleReactionUpdate)
+    metaverseService.on('typing-start', handleTypingUpdate)
+    metaverseService.on('message-reaction', handleReactionUpdate)
 
     return () => {
-      socketService.off('user-typing', handleTypingUpdate)
-      socketService.off('message-reaction-updated', handleReactionUpdate)
+      metaverseService.off('typing-start', handleTypingUpdate)
+      metaverseService.off('message-reaction', handleReactionUpdate)
     }
   }, [currentUserId])
 
@@ -118,7 +118,7 @@ const ChatOverlay: React.FC = () => {
       timestamp: Date.now()
     }
 
-    socketService.sendMessage(message.trim())
+    metaverseService.sendMessage(message.trim())
     addChatMessage(chatMessage)
     setMessage('')
     setIsTyping(false)
@@ -138,7 +138,7 @@ const ChatOverlay: React.FC = () => {
     
     if (!isTyping) {
       setIsTyping(true)
-      socketService.startTyping()
+      metaverseService.startTyping()
     }
 
     if (typingTimeoutRef.current) {
@@ -147,7 +147,7 @@ const ChatOverlay: React.FC = () => {
 
     typingTimeoutRef.current = setTimeout(() => {
       setIsTyping(false)
-      socketService.stopTyping()
+      metaverseService.stopTyping()
     }, 2000)
   }
 
@@ -164,7 +164,7 @@ const ChatOverlay: React.FC = () => {
   }
 
   const reactToMessage = (messageId: string, reaction: string) => {
-    socketService.reactToMessage(messageId, reaction)
+    metaverseService.reactToMessage(messageId, reaction)
   }
 
   const formatTime = (timestamp: number) => {

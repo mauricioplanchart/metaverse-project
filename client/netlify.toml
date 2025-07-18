@@ -3,11 +3,12 @@
   command = "npm run build"
 
 [build.environment]
-  VITE_SERVER_URL = "https://metaverse-project-3.onrender.com"
   VITE_APP_NAME = "Metaverse"
   VITE_APP_VERSION = "2.0.0"
   NODE_ENV = "production"
   VITE_ENVIRONMENT = "production"
+  VITE_SUPABASE_URL = "https://jnvbqcaweufmfswpnacv.supabase.co"
+  VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpudmJxY2F3ZXVmbWZzd3BuYWN2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE0ODk0MDMsImV4cCI6MjA2NzA2NTQwM30.8ayePMQr6ISfYWqkrjHDY7d1CKroVOQONCl6Ge2ApE4"
 
 [[headers]]
   for = "/*"
@@ -30,13 +31,10 @@
 
 # Environment-specific configurations
 [context.production.environment]
-  VITE_SERVER_URL = "https://metaverse-project-3.onrender.com"
   VITE_ENVIRONMENT = "production"
 
 [context.deploy-preview.environment]
-  VITE_SERVER_URL = "https://metaverse-project-3.onrender.com"
   VITE_ENVIRONMENT = "preview"
 
 [context.branch-deploy.environment]
-  VITE_SERVER_URL = "https://metaverse-project-3.onrender.com"
   VITE_ENVIRONMENT = "development" 

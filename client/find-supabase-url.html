@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Your Supabase Project URL</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .step {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .highlight {
+            background: #fff3cd;
+            padding: 10px;
+            border-left: 4px solid #ffc107;
+            margin: 10px 0;
+        }
+        .code {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            border: 1px solid #e9ecef;
+        }
+        .url-example {
+            background: #d4edda;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            color: #155724;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Find Your Supabase Project URL</h1>
+    
+    <div class="step">
+        <h2>Method 1: From Your Browser Address Bar</h2>
+        <p>When you're logged into your Supabase dashboard, look at the URL in your browser:</p>
+        <div class="code">
+            https://supabase.com/dashboard/project/[YOUR-PROJECT-ID]
+        </div>
+        <p>Your project URL will be:</p>
+        <div class="url-example">
+            https://[YOUR-PROJECT-ID].supabase.co
+        </div>
+    </div>
+
+    <div class="step">
+        <h2>Method 2: From Database Connection Info</h2>
+        <ol>
+            <li>Go to your Supabase Dashboard</li>
+            <li>Click on <strong>Database</strong> in the left sidebar</li>
+            <li>Look for <strong>Connection info</strong> or <strong>Connection string</strong></li>
+            <li>You should see something like: <code>Host: db.[project-id].supabase.co</code></li>
+            <li>Your project URL is: <code>https://[project-id].supabase.co</code></li>
+        </ol>
+    </div>
+
+    <div class="step">
+        <h2>Method 3: From API Settings</h2>
+        <ol>
+            <li>Go to <strong>Settings</strong> → <strong>API</strong></li>
+            <li>Look for a field called <strong>Project URL</strong> or <strong>URL</strong></li>
+            <li>It should be displayed near your anon key</li>
+        </ol>
+    </div>
+
+    <div class="highlight">
+        <h3>💡 Quick Check</h3>
+        <p>If you can see your anon key, the project URL is usually in the same section. Look for:</p>
+        <ul>
+            <li><strong>Project URL</strong></li>
+            <li><strong>URL</strong></li>
+            <li><strong>Host</strong></li>
+            <li><strong>Endpoint</strong></li>
+        </ul>
+    </div>
+
+    <div class="step">
+        <h2>What to Look For</h2>
+        <p>Your Supabase project URL will look like one of these:</p>
+        <div class="url-example">
+            https://abcdefghijklmnop.supabase.co<br>
+            https://my-project-name.supabase.co<br>
+            https://metaverse-project.supabase.co
+        </div>
+    </div>
+
+    <div class="step">
+        <h2>Once You Find It</h2>
+        <p>Update your <code>.env</code> file with:</p>
+        <div class="code">
+            VITE_SUPABASE_URL=https://your-actual-project-id.supabase.co<br>
+            VITE_SUPABASE_ANON_KEY=your-actual-anon-key
+        </div>
+    </div>
+
+    <script>
+        // Add some helpful console logging
+        console.log('🔍 Supabase URL Finder');
+        console.log('Check the steps above to find your project URL');
+        console.log('Your project URL should look like: https://[project-id].supabase.co');
+    </script>
+</body>
+</html> 

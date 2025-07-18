@@ -42,3 +42,29 @@ export interface ChatMessage {
   message: string
   timestamp: number
 }
+
+// Supabase-specific types
+export interface Avatar {
+  id: string
+  user_id: string
+  avatar_data: any
+  created_at: string
+  updated_at: string
+}
+
+export interface Position {
+  id: string
+  user_id: string
+  position_data: {
+    x: number
+    y: number
+    z: number
+  }
+  world_id: string
+  created_at: string
+  updated_at: string
+  users?: {
+    username: string
+    avatar_data: any
+  }
+}

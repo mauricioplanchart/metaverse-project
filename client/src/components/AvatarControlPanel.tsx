@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMetaverseStore } from '../stores/useMetaverseStore';
-import { socketService } from '../lib/socketService';
+import { metaverseService } from '../lib/metaverseService';
 
 const AvatarControlPanel: React.FC = () => {
   const { avatarCustomization, setCurrentEmote, setAvatarCustomization } = useMetaverseStore();
@@ -37,7 +37,7 @@ const AvatarControlPanel: React.FC = () => {
 
   const performEmote = (emote: string) => {
     setCurrentEmote(emote);
-    socketService.emit('emote', { emote });
+    metaverseService.interact('emote');
   };
 
   const updatePose = (axis: string, value: number) => {
@@ -47,7 +47,7 @@ const AvatarControlPanel: React.FC = () => {
       ...avatarCustomization,
       pose: newPose
     });
-    socketService.emit('avatar-update', { pose: newPose });
+    metaverseService.interact('pose-update');
   };
 
   const resetPose = () => {
@@ -56,7 +56,7 @@ const AvatarControlPanel: React.FC = () => {
       ...avatarCustomization,
       pose: resetPose
     });
-    socketService.emit('avatar-update', { pose: resetPose });
+    metaverseService.interact('pose-reset');
   };
 
   const quickPoses = [
@@ -73,7 +73,7 @@ const AvatarControlPanel: React.FC = () => {
       ...avatarCustomization,
       pose
     });
-    socketService.emit('avatar-update', { pose });
+    metaverseService.interact('pose-update');
   };
 
   return (

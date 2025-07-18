@@ -17,7 +17,7 @@
 - [ ] Set environment variables:
   - [ ] `NODE_ENV=production`
   - [ ] `PORT=10000`
-  - [ ] `CORS_ORIGIN=*`
+  - [x] `CORS_ORIGIN=*` (No longer needed - Supabase handles CORS automatically)
 - [ ] Deploy and wait for success
 - [ ] Test health endpoint: `https://your-backend.onrender.com/health`
 - [ ] Note the backend URL for frontend configuration

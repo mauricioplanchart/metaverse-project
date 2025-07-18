@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useMetaverseStore } from '../stores/useMetaverseStore';
-import { socketService } from '../lib/socketService';
+import { metaverseService } from '../lib/metaverseService';
 import { Room, Teleporter, InteractiveObject } from '../../../shared/types';
 
 const WorldScene: React.FC = () => {
@@ -138,18 +138,18 @@ const WorldScene: React.FC = () => {
         
         // Send position update to server
         if (currentUser) {
-          socketService.emit('position-update', {
-            position: {
+          metaverseService.updatePosition(
+            {
               x: camera.position.x,
               y: camera.position.y,
               z: camera.position.z
             },
-            rotation: {
+            {
               x: camera.rotation.x,
               y: camera.rotation.y,
               z: camera.rotation.z
             }
-          });
+          );
         }
         
         // Check for nearby objects and teleporters
@@ -657,13 +657,13 @@ const WorldScene: React.FC = () => {
       // Handle teleporter click
       if (mesh.name.startsWith('teleporter_') && mesh.teleporterData) {
         const teleporter = mesh.teleporterData;
-        socketService.emit('teleport', { teleporterId: teleporter.id });
+        metaverseService.teleport(teleporter.id);
       }
       
       // Handle object interaction
       if (mesh.name.startsWith('object_') && mesh.objectData) {
         const object = mesh.objectData;
-        socketService.emit('interact', { objectId: object.id });
+        metaverseService.interact(object.id);
       }
     }
   };
@@ -690,7 +690,7 @@ const WorldScene: React.FC = () => {
           });
         
         if (nearbyTeleporter?.teleporterData) {
-          socketService.emit('teleport', { teleporterId: nearbyTeleporter.teleporterData.id });
+          metaverseService.teleport(nearbyTeleporter.teleporterData.id);
           return;
         }
         
@@ -703,7 +703,7 @@ const WorldScene: React.FC = () => {
           });
         
         if (nearbyObject?.objectData) {
-          socketService.emit('interact', { objectId: nearbyObject.objectData.id });
+          metaverseService.interact(nearbyObject.objectData.id);
         }
       }
     };

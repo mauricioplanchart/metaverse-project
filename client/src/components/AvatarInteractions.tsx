@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMetaverseStore } from '../stores/useMetaverseStore';
-import { socketService } from '../lib/socketService';
+import { metaverseService } from '../lib/metaverseService';
 import * as BABYLON from '@babylonjs/core';
 
 interface AvatarInteractionsProps {
@@ -69,11 +69,7 @@ const AvatarInteractions: React.FC<AvatarInteractionsProps> = ({
     setActiveInteractions(prev => [...prev, `${interactionId}_${targetAvatar.userId}`]);
 
     // Send interaction to server
-    socketService.emit('avatar-interaction', {
-      interactionId,
-      targetUserId: targetAvatar.userId,
-      timestamp: Date.now()
-    });
+    metaverseService.interact(interactionId);
 
     // Create visual effects
     createInteractionEffect(interactionId, targetAvatar);

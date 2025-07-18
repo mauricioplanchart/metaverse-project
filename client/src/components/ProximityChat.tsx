@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useMetaverseStore } from '../stores/useMetaverseStore';
-import { socketService } from '../lib/socketService';
+import { metaverseService } from '../lib/metaverseService';
 
 interface ProximityChatProps {
   currentUserPosition: any; // Current user's position
@@ -81,12 +81,12 @@ const ProximityChat: React.FC<ProximityChatProps> = ({
       }
     };
 
-    socketService.on('proximity-message', handleProximityMessage);
-    socketService.on('proximity-typing', handleTypingStatus);
+    metaverseService.on('proximity-message', handleProximityMessage);
+    metaverseService.on('proximity-typing', handleTypingStatus);
 
     return () => {
-      socketService.off('proximity-message', handleProximityMessage);
-      socketService.off('proximity-typing', handleTypingStatus);
+      metaverseService.off('proximity-message', handleProximityMessage);
+      metaverseService.off('proximity-typing', handleTypingStatus);
     };
   }, [nearbyAvatar, currentUserId]);
 
@@ -101,7 +101,7 @@ const ProximityChat: React.FC<ProximityChatProps> = ({
     };
 
     // Send to server
-    socketService.emit('proximity-message', messageData);
+          metaverseService.sendMessage(message, 'proximity');
 
     // Add to local conversation
     setConversationHistory(prev => [...prev, {
@@ -121,19 +121,11 @@ const ProximityChat: React.FC<ProximityChatProps> = ({
   };
 
   const startTyping = () => {
-    socketService.emit('proximity-typing', {
-      userId: currentUserId,
-      targetUserId: nearbyAvatar?.userId,
-      isTyping: true
-    });
+    metaverseService.startTyping();
   };
 
   const stopTyping = () => {
-    socketService.emit('proximity-typing', {
-      userId: currentUserId,
-      targetUserId: nearbyAvatar?.userId,
-      isTyping: false
-    });
+    metaverseService.stopTyping();
   };
 
   if (!isInProximity || !nearbyAvatar) {

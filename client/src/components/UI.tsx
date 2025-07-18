@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
 import { useMetaverseStore } from '../stores/useMetaverseStore';
-import { FriendsPanel } from './FriendsPanel';
-import { PrivateMessaging } from './PrivateMessaging';
-import { UserProfileComponent } from './UserProfile';
 import AvatarControlPanel from './AvatarControlPanel';
 
 export const UI: React.FC = () => {
@@ -14,10 +11,6 @@ export const UI: React.FC = () => {
 
   const [showControls, setShowControls] = useState(false);
   const [showPlayerList, setShowPlayerList] = useState(false);
-  const [showFriends, setShowFriends] = useState(false);
-  const [showMessages, setShowMessages] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
-  const [selectedFriend] = useState<any>(null);
 
   const movementControls = [
     { key: 'W', action: 'Move Forward' },
@@ -73,24 +66,6 @@ export const UI: React.FC = () => {
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg pointer-events-auto transition-colors"
           >
             Players ({onlineUsers.length})
-          </button>
-          <button
-            onClick={() => setShowFriends(!showFriends)}
-            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg pointer-events-auto transition-colors"
-          >
-            👥 Friends
-          </button>
-          <button
-            onClick={() => setShowMessages(!showMessages)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg pointer-events-auto transition-colors"
-          >
-            💬 Messages
-          </button>
-          <button
-            onClick={() => setShowProfile(!showProfile)}
-            className="bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded-lg pointer-events-auto transition-colors"
-          >
-            👤 Profile
           </button>
         </div>
       </div>
@@ -220,30 +195,6 @@ export const UI: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Social Features */}
-      {currentUser && (
-        <>
-          <FriendsPanel
-            currentUser={currentUser}
-            isOpen={showFriends}
-            onClose={() => setShowFriends(false)}
-          />
-
-          <PrivateMessaging
-            currentUser={currentUser}
-            selectedFriend={selectedFriend}
-            isOpen={showMessages}
-            onClose={() => setShowMessages(false)}
-          />
-
-          <UserProfileComponent
-            currentUser={currentUser}
-            isOpen={showProfile}
-            onClose={() => setShowProfile(false)}
-          />
-        </>
-      )}
 
       {/* Avatar Control Panel */}
       <AvatarControlPanel />

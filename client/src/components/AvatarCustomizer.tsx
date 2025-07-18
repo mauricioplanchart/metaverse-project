@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useMetaverseStore } from '../stores/useMetaverseStore';
-import { socketService } from '../lib/socketService';
+import { metaverseService } from '../lib/metaverseService';
 
 // Enhanced color palette
 const colorOptions = [
@@ -117,7 +117,7 @@ export const AvatarCustomizer: React.FC = () => {
   useEffect(() => {
     if (autoSave) {
       const timeoutId = setTimeout(() => {
-        socketService.emit('avatar-update', avatarCustomization);
+        metaverseService.interact('avatar-update');
       }, 1000);
       return () => clearTimeout(timeoutId);
     }
@@ -142,7 +142,7 @@ export const AvatarCustomizer: React.FC = () => {
 
   const performEmote = (emote: string) => {
     setCurrentEmote(emote);
-    socketService.emit('emote', { emote });
+    metaverseService.interact('emote');
   };
 
   const updateBodyProportion = (part: string, value: number) => {

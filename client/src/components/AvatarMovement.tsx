@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useMetaverseStore } from '../stores/useMetaverseStore';
-import { socketService } from '../lib/socketService';
+import { metaverseService } from '../lib/metaverseService';
 import * as BABYLON from '@babylonjs/core';
 
 interface AvatarMovementProps {
@@ -183,14 +183,14 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
 
         // Send position update to server
         if (isConnected) {
-          socketService.emit('avatar-move', {
-            userId: currentUserId,
-            position: {
+          metaverseService.updatePosition(
+            {
               x: newPosition.x,
               y: newPosition.y,
               z: newPosition.z
-            }
-          });
+            },
+            { x: 0, y: 0, z: 0 } // Default rotation
+          );
         }
       }
 
@@ -229,14 +229,14 @@ const AvatarMovement: React.FC<AvatarMovementProps> = ({
     setPosition(testPosition);
     
     if (isConnected) {
-      socketService.emit('avatar-move', {
-        userId: currentUserId,
-        position: {
+      metaverseService.updatePosition(
+        {
           x: testPosition.x,
           y: testPosition.y,
           z: testPosition.z
-        }
-      });
+        },
+        { x: 0, y: 0, z: 0 } // Default rotation
+      );
     }
   };
 

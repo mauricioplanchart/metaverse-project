@@ -16,8 +16,13 @@ const Avatar3D: React.FC<Avatar3DProps> = ({ scene, position, username, avatarDa
   const { avatarCustomization } = useMetaverseStore();
   const currentEmote = avatarCustomization.currentEmote;
 
+  console.log('🎭 Avatar3D component rendering:', { username, isCurrentUser, position: position.toString() });
+
   useEffect(() => {
-    if (!scene || !avatarData) return;
+    if (!scene || !avatarData) {
+      console.log('🎭 Avatar3D: Missing scene or avatarData', { scene: !!scene, avatarData: !!avatarData });
+      return;
+    }
 
     console.log('🎭 Creating 3D avatar for:', username, avatarData);
 

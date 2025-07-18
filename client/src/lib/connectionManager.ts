@@ -1,6 +1,8 @@
 import { io, Socket } from 'socket.io-client'
+import { config } from './config'
+import { supabase } from './supabase'
 
-type ConnectionType = 'socketio' | 'websocket' | 'polling'
+type ConnectionType = 'supabase' | 'socketio' | 'websocket' | 'polling'
 
 interface ConnectionState {
   isConnected: boolean
@@ -12,7 +14,8 @@ interface ConnectionState {
 class ConnectionManager {
   private socket: Socket | null = null
   private ws: WebSocket | null = null
-  private serverUrl = 'http://localhost:3001'
+  private supabaseChannel: any = null
+  private serverUrl = config.isDevelopment ? 'http://localhost:3001' : 'https://metaverse-project-2.onrender.com'
   private listeners: Map<string, ((...args: any[]) => void)[]> = new Map()
   private state: ConnectionState = {
     isConnected: false,
@@ -20,17 +23,16 @@ class ConnectionManager {
     error: null,
     type: null
   }
-  // private currentType: ConnectionType = 'socketio'
   private retryCount = 0
   private maxRetries = 3
 
   constructor() {
     console.log('🔧 ConnectionManager initialized')
+    console.log('🔧 Config debug:', config)
+    console.log('🌐 Using environment URL:', this.serverUrl)
   }
 
-  async connect(type: ConnectionType = 'socketio'): Promise<boolean> {
-    // this.currentType = type
-    
+  async connect(type: ConnectionType = 'supabase'): Promise<boolean> {
     if (this.state.isConnecting) {
       console.log('🔄 Already connecting...')
       return false
@@ -42,6 +44,8 @@ class ConnectionManager {
 
     try {
       switch (type) {
+        case 'supabase':
+          return await this.connectSupabase()
         case 'socketio':
           return await this.connectSocketIO()
         case 'websocket':
@@ -58,6 +62,86 @@ class ConnectionManager {
       this.emit('connectionError', this.state.error)
       return false
     }
+  }
+
+  private async connectSupabase(): Promise<boolean> {
+    return new Promise((resolve) => {
+      try {
+        console.log('🔌 Connecting via Supabase Realtime...')
+        
+        if (!config.supabaseUrl || !config.supabaseAnonKey) {
+          console.error('❌ Supabase configuration missing')
+          this.state.isConnecting = false
+          this.state.error = 'Supabase configuration missing'
+          this.emit('connectionError', 'Supabase configuration missing')
+          resolve(false)
+          return
+        }
+
+        // Create a channel for real-time communication
+        this.supabaseChannel = supabase
+          .channel('metaverse-realtime')
+          .on('presence', { event: 'sync' }, () => {
+            console.log('✅ Supabase presence sync')
+          })
+          .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+            console.log('👤 User joined:', newPresences)
+            this.emit('userJoined', newPresences)
+          })
+          .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+            console.log('👋 User left:', leftPresences)
+            this.emit('userLeft', leftPresences)
+          })
+          .on('broadcast', { event: 'avatar-update' }, (payload) => {
+            console.log('🎭 Avatar update received:', payload)
+            this.emit('avatarUpdate', payload)
+          })
+          .on('broadcast', { event: 'chat-message' }, (payload) => {
+            console.log('💬 Chat message received:', payload)
+            this.emit('chatMessage', payload)
+          })
+          .on('broadcast', { event: 'world-interaction' }, (payload) => {
+            console.log('🌍 World interaction received:', payload)
+            this.emit('worldInteraction', payload)
+          })
+          .subscribe((status) => {
+            console.log('🔌 Supabase subscription status:', status)
+            if (status === 'SUBSCRIBED') {
+              console.log('✅ Supabase Realtime connected!')
+              this.state.isConnected = true
+              this.state.isConnecting = false
+              this.state.error = null
+              this.retryCount = 0
+              this.emit('connectionChanged', true)
+              resolve(true)
+            } else if (status === 'CHANNEL_ERROR') {
+              console.error('❌ Supabase channel error')
+              this.state.isConnected = false
+              this.state.isConnecting = false
+              this.state.error = 'Supabase channel error'
+              this.emit('connectionError', 'Supabase channel error')
+              resolve(false)
+            }
+          })
+
+        // Set timeout
+        setTimeout(() => {
+          if (!this.state.isConnected) {
+            this.state.isConnecting = false
+            this.state.error = 'Supabase connection timeout'
+            this.emit('connectionError', 'Supabase connection timeout')
+            resolve(false)
+          }
+        }, 10000)
+
+      } catch (error) {
+        console.error('❌ Supabase connection error:', error)
+        this.state.isConnecting = false
+        this.state.error = error instanceof Error ? error.message : 'Supabase connection error'
+        this.emit('connectionError', this.state.error)
+        resolve(false)
+      }
+    })
   }
 
   private async connectSocketIO(): Promise<boolean> {
@@ -231,7 +315,7 @@ class ConnectionManager {
   }
 
   async retryWithFallback(): Promise<boolean> {
-    const types: ConnectionType[] = ['socketio', 'websocket', 'polling']
+    const types: ConnectionType[] = ['supabase', 'socketio', 'websocket', 'polling']
     
     for (const type of types) {
       if (this.retryCount >= this.maxRetries) {
@@ -256,6 +340,13 @@ class ConnectionManager {
   }
 
   disconnect(): void {
+    console.log('🔌 Disconnecting from multiplayer server...')
+    
+    if (this.supabaseChannel) {
+      supabase.removeChannel(this.supabaseChannel)
+      this.supabaseChannel = null
+    }
+    
     if (this.socket) {
       this.socket.disconnect()
       this.socket = null
@@ -268,12 +359,22 @@ class ConnectionManager {
 
     this.state.isConnected = false
     this.state.isConnecting = false
+    this.state.error = null
     this.state.type = null
     this.retryCount = 0
+    
+    this.emit('connectionChanged', false)
   }
 
   send(event: string, data?: any): void {
-    if (this.socket?.connected) {
+    if (this.supabaseChannel && this.state.isConnected) {
+      // Send via Supabase broadcast
+      this.supabaseChannel.send({
+        type: 'broadcast',
+        event: event,
+        payload: data
+      })
+    } else if (this.socket?.connected) {
       this.socket.emit(event, data)
     } else if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify({ type: event, payload: data }))

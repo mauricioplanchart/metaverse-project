@@ -55,7 +55,7 @@ chmod +x deploy-netlify.sh deploy-render.sh
 ```
 NODE_ENV=production
 PORT=10000
-CORS_ORIGIN=*
+# CORS_ORIGIN=* (No longer needed - Supabase handles CORS automatically)
 ```
 
 ### Step 3: Deploy
@@ -125,7 +125,7 @@ services:
         value: production
       - key: PORT
         value: 10000
-      - key: CORS_ORIGIN
+      # - key: CORS_ORIGIN (No longer needed - Supabase handles CORS automatically)
         value: "*"
     healthCheckPath: /
     autoDeploy: true
@@ -160,7 +160,7 @@ Expected response:
 **Backend Issues:**
 - **Build fails**: Check `server/package.json` dependencies
 - **Port issues**: Ensure PORT environment variable is set
-- **CORS errors**: Verify CORS_ORIGIN setting
+- **CORS errors**: No longer applicable - Supabase handles CORS automatically
 
 **Frontend Issues:**
 - **Build fails**: Check `package.json` dependencies

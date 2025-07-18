@@ -79,7 +79,7 @@
 ```
 NODE_ENV=production
 PORT=10000
-CORS_ORIGIN=*
+# CORS_ORIGIN=* (No longer needed - Supabase handles CORS automatically)
 ```
 
 ### Frontend (Netlify)

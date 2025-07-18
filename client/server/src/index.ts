@@ -19,13 +19,18 @@ const allowedOrigins = [
   'http://localhost:5178',
   'http://localhost:5179',
   'http://localhost:5180',
-  'http://localhost:5181'
+  'http://localhost:5181',
+  // Add your exact Netlify URL
+  'https://your-exact-netlify-url.netlify.app'
 ];
 
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
+    
+    // Log all origins for debugging
+    console.log('🔍 Request origin:', origin);
     
     if (allowedOrigins.indexOf(origin) !== -1 || CORS_ORIGIN === '*') {
       callback(null, true);
@@ -36,7 +41,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin']
 }));
 
 app.use(express.json());
@@ -84,7 +89,7 @@ const io = new Server(server, {
     origin: allowedOrigins,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin']
   },
   path: '/socket.io/'
 });

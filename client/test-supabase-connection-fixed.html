@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supabase Connection Test - Fixed</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: white;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .success { background: #4CAF50; }
+        .error { background: #f44336; }
+        .warning { background: #ff9800; }
+        .info { background: #2196F3; }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #333;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .log {
+            background: #000;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Supabase Connection Test - Fixed</h1>
+        
+        <div class="test-section">
+            <h2>📋 Test Status</h2>
+            <div id="status" class="status info">Initializing...</div>
+        </div>
+
+        <div class="test-section">
+            <h2>🎮 Connection Tests</h2>
+            <button onclick="testSupabaseConnection()">Test Supabase Connection</button>
+            <button onclick="testConnectionManager()">Test Connection Manager</button>
+            <button onclick="testMetaverseService()">Test Metaverse Service</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Environment Info</h2>
+            <div id="env-info"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>📝 Connection Log</h2>
+            <div id="log" class="log"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the modules we want to test
+        import { connectionManager } from './src/lib/connectionManager.js';
+        import { metaverseService } from './src/lib/metaverseService.js';
+        import { config } from './src/lib/config.js';
+        import { supabase } from './src/lib/supabase.js';
+
+        window.connectionManager = connectionManager;
+        window.metaverseService = metaverseService;
+        window.config = config;
+        window.supabase = supabase;
+
+        // Log function
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.style.color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#51cf66' : type === 'warning' ? '#ffd43b' : '#ffffff';
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        // Update status
+        function updateStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        // Display environment info
+        function displayEnvInfo() {
+            const envDiv = document.getElementById('env-info');
+            envDiv.innerHTML = `
+                <div><strong>Supabase URL:</strong> ${config.supabaseUrl ? '✅ Configured' : '❌ Missing'}</div>
+                <div><strong>Supabase Key:</strong> ${config.supabaseAnonKey ? '✅ Configured' : '❌ Missing'}</div>
+                <div><strong>Environment:</strong> ${config.isDevelopment ? 'Development' : 'Production'}</div>
+                <div><strong>App Version:</strong> ${config.appVersion}</div>
+            `;
+        }
+
+        // Test Supabase connection
+        window.testSupabaseConnection = async function() {
+            log('🔌 Testing Supabase connection...', 'info');
+            updateStatus('Testing Supabase connection...', 'info');
+
+            try {
+                // Test basic connection
+                const { data, error } = await supabase.from('users').select('*').limit(1);
+                
+                if (error) {
+                    log(`❌ Supabase connection failed: ${error.message}`, 'error');
+                    updateStatus(`Supabase connection failed: ${error.message}`, 'error');
+                    return;
+                }
+
+                log('✅ Supabase connection successful!', 'success');
+                updateStatus('Supabase connection successful!', 'success');
+                log(`📊 Data test: ${JSON.stringify(data)}`, 'info');
+
+            } catch (error) {
+                log(`❌ Supabase connection error: ${error.message}`, 'error');
+                updateStatus(`Supabase connection error: ${error.message}`, 'error');
+            }
+        };
+
+        // Test Connection Manager
+        window.testConnectionManager = async function() {
+            log('🔌 Testing Connection Manager...', 'info');
+            updateStatus('Testing Connection Manager...', 'info');
+
+            try {
+                // Test Supabase connection
+                const connected = await connectionManager.connect('supabase');
+                
+                if (connected) {
+                    log('✅ Connection Manager connected via Supabase!', 'success');
+                    updateStatus('Connection Manager connected via Supabase!', 'success');
+                    
+                    // Test sending a message
+                    connectionManager.send('test-message', { test: 'data' });
+                    log('📤 Test message sent via Connection Manager', 'info');
+                    
+                    // Disconnect after test
+                    setTimeout(() => {
+                        connectionManager.disconnect();
+                        log('🔌 Connection Manager disconnected', 'info');
+                    }, 2000);
+                } else {
+                    log('❌ Connection Manager failed to connect', 'error');
+                    updateStatus('Connection Manager failed to connect', 'error');
+                }
+
+            } catch (error) {
+                log(`❌ Connection Manager error: ${error.message}`, 'error');
+                updateStatus(`Connection Manager error: ${error.message}`, 'error');
+            }
+        };
+
+        // Test Metaverse Service
+        window.testMetaverseService = async function() {
+            log('🎮 Testing Metaverse Service...', 'info');
+            updateStatus('Testing Metaverse Service...', 'info');
+
+            try {
+                await metaverseService.connect();
+                log('✅ Metaverse Service connected!', 'success');
+                updateStatus('Metaverse Service connected!', 'success');
+                
+                // Test joining a world
+                await metaverseService.joinWorld('test-world', 'TestUser');
+                log('🌍 Joined test world via Metaverse Service', 'info');
+                
+                // Disconnect after test
+                setTimeout(() => {
+                    metaverseService.disconnect();
+                    log('🔌 Metaverse Service disconnected', 'info');
+                }, 2000);
+
+            } catch (error) {
+                log(`❌ Metaverse Service error: ${error.message}`, 'error');
+                updateStatus(`Metaverse Service error: ${error.message}`, 'error');
+            }
+        };
+
+        // Clear log
+        window.clearLog = function() {
+            document.getElementById('log').innerHTML = '';
+        };
+
+        // Initialize
+        log('🚀 Supabase Connection Test - Fixed initialized', 'info');
+        displayEnvInfo();
+        updateStatus('Ready to test connections', 'success');
+    </script>
+</body>
+</html> 

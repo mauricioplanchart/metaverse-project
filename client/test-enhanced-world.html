@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced World Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .feature-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .feature-card h3 {
+            margin-top: 0;
+            color: #ffd700;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #4caf50;
+            color: white;
+        }
+        .status.warning {
+            background: #ff9800;
+            color: white;
+        }
+        .status.error {
+            background: #f44336;
+            color: white;
+        }
+        .test-button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            margin: 5px;
+            transition: transform 0.2s;
+        }
+        .test-button:hover {
+            transform: scale(1.05);
+        }
+        .controls {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .controls h3 {
+            margin-top: 0;
+            color: #ffd700;
+        }
+        .key-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+        }
+        .key-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        kbd {
+            background: #333;
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 Enhanced World Test</h1>
+        
+        <div class="feature-grid">
+            <div class="feature-card">
+                <h3>🎯 Interactive Zones</h3>
+                <p>5 unique zones with different activities and visual themes</p>
+                <div class="status success">✅ Implemented</div>
+                <ul>
+                    <li>Gaming Arcade (Orange)</li>
+                    <li>Shopping District (Purple)</li>
+                    <li>Social Plaza (Green)</li>
+                    <li>Nature Park (Green)</li>
+                    <li>Entertainment Center (Pink)</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>🌤️ Dynamic Systems</h3>
+                <p>Day/night cycle and weather system with real-time changes</p>
+                <div class="status success">✅ Implemented</div>
+                <ul>
+                    <li>24-hour day/night cycle</li>
+                    <li>Dynamic sun and moon</li>
+                    <li>Weather changes every 30s</li>
+                    <li>Rain particle effects</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>🎮 Mini-Games</h3>
+                <p>Three different mini-games with scoring and effects</p>
+                <div class="status success">✅ Implemented</div>
+                <ul>
+                    <li>Target Shooting (60s)</li>
+                    <li>Obstacle Course</li>
+                    <li>Collection Game</li>
+                    <li>Particle effects</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>🚀 Interactive Objects</h3>
+                <p>Teleporters, portals, and interactive objects</p>
+                <div class="status success">✅ Implemented</div>
+                <ul>
+                    <li>3 Teleporters</li>
+                    <li>2 Portals</li>
+                    <li>4 Interactive Objects</li>
+                    <li>Proximity detection</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>🎨 Visual Enhancements</h3>
+                <p>Particle systems, animations, and dynamic lighting</p>
+                <div class="status success">✅ Implemented</div>
+                <ul>
+                    <li>Multiple particle systems</li>
+                    <li>Floating animations</li>
+                    <li>Rotating elements</li>
+                    <li>Emissive materials</li>
+                </ul>
+            </div>
+
+            <div class="feature-card">
+                <h3>⚡ Performance</h3>
+                <p>Optimized rendering with LOD and performance monitoring</p>
+                <div class="status success">✅ Implemented</div>
+                <ul>
+                    <li>LOD system</li>
+                    <li>Performance monitor</li>
+                    <li>Memory management</li>
+                    <li>Efficient rendering</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="controls">
+            <h3>🎮 Controls & Shortcuts</h3>
+            <div class="key-list">
+                <div class="key-item">
+                    <span>Open Game Menu</span>
+                    <kbd>G</kbd>
+                </div>
+                <div class="key-item">
+                    <span>Interact with Objects</span>
+                    <kbd>E</kbd>
+                </div>
+                <div class="key-item">
+                    <span>Debug Mode</span>
+                    <kbd>F1</kbd>
+                </div>
+                <div class="key-item">
+                    <span>Performance Monitor</span>
+                    <kbd>F2</kbd>
+                </div>
+                <div class="key-item">
+                    <span>Performance Settings</span>
+                    <kbd>F3</kbd>
+                </div>
+                <div class="key-item">
+                    <span>Mobile UI</span>
+                    <kbd>F4</kbd>
+                </div>
+                <div class="key-item">
+                    <span>Move Forward</span>
+                    <kbd>W</kbd>
+                </div>
+                <div class="key-item">
+                    <span>Move Backward</span>
+                    <kbd>S</kbd>
+                </div>
+                <div class="key-item">
+                    <span>Move Left</span>
+                    <kbd>A</kbd>
+                </div>
+                <div class="key-item">
+                    <span>Move Right</span>
+                    <kbd>D</kbd>
+                </div>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="test-button" onclick="window.open('http://localhost:5173', '_blank')">
+                🚀 Launch Enhanced Metaverse
+            </button>
+            <button class="test-button" onclick="window.open('http://localhost:3001', '_blank')">
+                📊 Server Status
+            </button>
+        </div>
+
+        <div style="margin-top: 30px; text-align: center; font-size: 0.9em; opacity: 0.8;">
+            <p>🎯 <strong>Test Instructions:</strong></p>
+            <ol style="text-align: left; max-width: 600px; margin: 0 auto;">
+                <li>Launch the metaverse and explore the different zones</li>
+                <li>Visit the Gaming Arcade (orange zone) and press G to open games</li>
+                <li>Try interacting with objects by pressing E when near them</li>
+                <li>Use teleporters to move around the world</li>
+                <li>Watch for weather changes and day/night cycle</li>
+                <li>Test performance features with F1-F4 keys</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Add some interactive effects
+        document.querySelectorAll('.test-button').forEach(button => {
+            button.addEventListener('click', function() {
+                this.style.transform = 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                }, 150);
+            });
+        });
+
+        // Add a simple animation to status indicators
+        document.querySelectorAll('.status').forEach(status => {
+            status.style.animation = 'pulse 2s infinite';
+        });
+
+        // Add CSS animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0% { opacity: 1; }
+                50% { opacity: 0.7; }
+                100% { opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html> 

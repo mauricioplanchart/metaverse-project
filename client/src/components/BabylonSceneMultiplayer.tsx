@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useMetaverseStore } from '../stores/useMetaverseStore';
-import { socketService } from '../lib/socketService';
+import { metaverseService } from '../lib/metaverseService';
 import Avatar3D from './Avatar3D';
 import ProximityChat from './ProximityChat';
 import AvatarMovement from './AvatarMovement';
 import AvatarInteractions from './AvatarInteractions';
+import EnhancedWorld from './EnhancedWorld';
+import MiniGames from './MiniGames';
+import WorldInteractions from './WorldInteractions';
 
 // Import Babylon.js
 import * as BABYLON from '@babylonjs/core';
@@ -27,12 +30,19 @@ const BabylonSceneMultiplayer: React.FC = () => {
   const [userAvatars, setUserAvatars] = useState<any[]>([]);
   const [currentUserPosition] = useState<BABYLON.Vector3>(new BABYLON.Vector3(0, 0, 0));
   const [camera, setCamera] = useState<BABYLON.Camera | null>(null);
+  const [activeZone, setActiveZone] = useState<string | null>(null);
+  const [currentGame, setCurrentGame] = useState<'target' | 'obstacle' | 'collection' | null>(null);
+  const [gameScore, setGameScore] = useState(0);
+  const [showGameMenu, setShowGameMenu] = useState(false);
 
   // Debug logging
   console.log('🎮 BabylonSceneMultiplayer render v3:', { isConnected, error, isOfflineMode });
   console.log('🎮 Canvas ref:', canvasRef.current);
   console.log('🎮 Engine ref:', engineRef.current);
   console.log('🎮 Scene ref:', sceneRef.current);
+  console.log('🎮 User avatars count:', userAvatars.length);
+  console.log('🎮 Online users count:', onlineUsers.length);
+  console.log('🎮 Current user ID:', currentUserId);
 
   // Initialize Babylon.js scene - ONLY ONCE
   useEffect(() => {
@@ -59,10 +69,10 @@ const BabylonSceneMultiplayer: React.FC = () => {
       console.log('🔄 No connection detected, enabling offline mode...');
       console.log('🔧 Connection debug:', {
         isConnected,
-        socketServiceConnected: socketService.isConnected,
-        socketServiceConnecting: socketService.isConnectingState,
-        socketId: socketService.id,
-        serverUrl: socketService.serverUrlForDebug
+            metaverseServiceConnected: metaverseService.connected,
+    metaverseServiceConnecting: false, // metaverseService doesn't have a connecting state
+                  userId: metaverseService.id,
+          currentUser: metaverseService.currentUser?.username
       });
       setIsOfflineMode(true);
     }
@@ -453,31 +463,61 @@ const BabylonSceneMultiplayer: React.FC = () => {
       
       // Create initial user avatars from online users
       const createUserAvatars = () => {
-        const avatars = onlineUsers.map((user, index) => {
-          // Generate random position for each user
-          const angle = (index / onlineUsers.length) * Math.PI * 2;
-          const radius = 3 + Math.random() * 2;
-          const position = new BABYLON.Vector3(
-            Math.cos(angle) * radius,
-            0,
-            Math.sin(angle) * radius
-          );
-          
-          return {
-            userId: user.id,
-            username: user.username || `Player_${user.id}`,
-            position: position,
-            avatarData: user.avatarCustomization || avatarCustomization,
-            isCurrentUser: user.id === currentUserId
-          };
-        });
+        console.log('🎭 Creating initial avatars...');
+        console.log('🎭 Online users:', onlineUsers.length);
+        console.log('🎭 Current user ID:', currentUserId);
         
-        console.log('🎭 Created avatars for users:', avatars.map(a => a.username));
+        let avatars = [];
+        
+        if (onlineUsers.length > 0) {
+          // Create avatars for online users
+          avatars = onlineUsers.map((user, index) => {
+            // Generate random position for each user
+            const angle = (index / onlineUsers.length) * Math.PI * 2;
+            const radius = 3 + Math.random() * 2;
+            const position = new BABYLON.Vector3(
+              Math.cos(angle) * radius,
+              0,
+              Math.sin(angle) * radius
+            );
+            
+            return {
+              userId: user.id,
+              username: user.username || `Player_${user.id}`,
+              position: position,
+              avatarData: user.avatarCustomization || avatarCustomization,
+              isCurrentUser: user.id === currentUserId
+            };
+          });
+        } else {
+          // Create a fallback avatar for the current user if no online users
+          console.log('🎭 Creating fallback avatar for current user');
+          avatars = [{
+            userId: currentUserId || 'local-user',
+            username: 'You',
+            position: new BABYLON.Vector3(0, 0, 0),
+            avatarData: avatarCustomization,
+            isCurrentUser: true
+          }];
+        }
+        
+        console.log('🎭 Created avatars for users:', avatars.map(a => ({ username: a.username, isCurrentUser: a.isCurrentUser })));
         setUserAvatars(avatars);
       };
       
       // Initialize user avatars
       createUserAvatars();
+      
+      // Create a test avatar to ensure rendering works
+      console.log('🎭 Creating test avatar...');
+      const testAvatar = {
+        userId: 'test-user',
+        username: 'Test Avatar',
+        position: new BABYLON.Vector3(2, 0, 2),
+        avatarData: avatarCustomization,
+        isCurrentUser: false
+      };
+      setUserAvatars(prev => [...prev, testAvatar]);
 
       // Start render loop
       engine.runRenderLoop(() => {
@@ -493,8 +533,17 @@ const BabylonSceneMultiplayer: React.FC = () => {
       setIsInitialized(true);
       console.log('🎮 Scene initialized successfully');
 
+      // Add keyboard shortcuts for game menu
+      const handleKeyPress = (event: KeyboardEvent) => {
+        if (event.key === 'g' || event.key === 'G') {
+          setShowGameMenu(prev => !prev);
+        }
+      };
+      window.addEventListener('keydown', handleKeyPress);
+
       return () => {
         window.removeEventListener('resize', handleResize);
+        window.removeEventListener('keydown', handleKeyPress);
         // Don't dispose here - let the cleanup useEffect handle it
       };
     } catch (err) {
@@ -505,9 +554,15 @@ const BabylonSceneMultiplayer: React.FC = () => {
 
   // Update user avatars when online users change
   useEffect(() => {
+    console.log('👥 Online users updated:', onlineUsers.length, 'users');
+    console.log('🎭 Current user ID:', currentUserId);
+    console.log('🎭 Avatar customization:', avatarCustomization);
+    
+    let avatars = [];
+    
     if (onlineUsers.length > 0) {
-      console.log('👥 Online users updated:', onlineUsers.length, 'users');
-      const avatars = onlineUsers.map((user, index) => {
+      // Create avatars for online users
+      avatars = onlineUsers.map((user, index) => {
         // Generate random position for each user
         const angle = (index / onlineUsers.length) * Math.PI * 2;
         const radius = 3 + Math.random() * 2;
@@ -525,11 +580,62 @@ const BabylonSceneMultiplayer: React.FC = () => {
           isCurrentUser: user.id === currentUserId
         };
       });
-      
-      console.log('🎭 Updated avatars for users:', avatars.map(a => a.username));
-      setUserAvatars(avatars);
+    } else {
+      // Create a fallback avatar for the current user if no online users
+      console.log('🎭 Creating fallback avatar for current user');
+      avatars = [{
+        userId: currentUserId || 'local-user',
+        username: 'You',
+        position: new BABYLON.Vector3(0, 0, 0),
+        avatarData: avatarCustomization,
+        isCurrentUser: true
+      }];
     }
+    
+    console.log('🎭 Final avatars to render:', avatars.map(a => ({ username: a.username, isCurrentUser: a.isCurrentUser })));
+    setUserAvatars(avatars);
   }, [onlineUsers, currentUserId, avatarCustomization]);
+
+  // Event handlers for enhanced world features
+  const handleZoneEnter = (zoneName: string) => {
+    setActiveZone(zoneName);
+    console.log(`🎯 Entered zone: ${zoneName}`);
+  };
+
+  const handleGameStart = (gameType: 'target' | 'obstacle' | 'collection') => {
+    setCurrentGame(gameType);
+    setShowGameMenu(false);
+    console.log(`🎮 Starting game: ${gameType}`);
+  };
+
+  const handleGameComplete = (score: number, gameType: string) => {
+    setGameScore(score);
+    setCurrentGame(null);
+    console.log(`🎮 Game completed: ${gameType} with score ${score}`);
+  };
+
+  const handleGameExit = () => {
+    setCurrentGame(null);
+    setShowGameMenu(false);
+  };
+
+  const handleTeleport = (destination: BABYLON.Vector3) => {
+    console.log(`🚀 Teleporting to: ${destination.toString()}`);
+    // This would update the player position
+    // For now, just log the teleport
+  };
+
+  const handlePortalEnter = (portalId: string) => {
+    console.log(`🌀 Entering portal: ${portalId}`);
+    // This would load a different world/area
+    // For now, just log the portal entry
+  };
+
+  const handleObjectInteract = (objectId: string, interactionType: string) => {
+    console.log(`🎮 Interacting with ${objectId}: ${interactionType}`);
+    // This would trigger specific interactions
+    // For now, just log the interaction
+  };
 
   // Cleanup on unmount
   useEffect(() => {
@@ -600,6 +706,82 @@ const BabylonSceneMultiplayer: React.FC = () => {
             currentUserAvatar={userAvatars.find(avatar => avatar.isCurrentUser)}
             nearbyAvatars={userAvatars.filter(avatar => !avatar.isCurrentUser)}
           />
+        )}
+
+        {/* Enhanced World Features */}
+        {sceneRef.current && (
+          <EnhancedWorld
+            scene={sceneRef.current}
+            onZoneEnter={handleZoneEnter}
+            onGameStart={handleGameStart}
+          />
+        )}
+
+        {/* World Interactions */}
+        {sceneRef.current && (
+          <WorldInteractions
+            scene={sceneRef.current}
+            onTeleport={handleTeleport}
+            onPortalEnter={handlePortalEnter}
+            onObjectInteract={handleObjectInteract}
+          />
+        )}
+
+        {/* Mini Games */}
+        {sceneRef.current && currentGame && (
+          <MiniGames
+            scene={sceneRef.current}
+            gameType={currentGame}
+            onGameComplete={handleGameComplete}
+            onGameExit={handleGameExit}
+          />
+        )}
+
+        {/* Game Menu */}
+        {showGameMenu && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h2 className="text-2xl font-bold mb-4 text-center">🎮 Gaming Arcade</h2>
+              <div className="space-y-3">
+                <button
+                  onClick={() => handleGameStart('target')}
+                  className="w-full bg-red-500 text-white py-3 px-4 rounded hover:bg-red-600 transition-colors"
+                >
+                  🎯 Target Shooting
+                </button>
+                <button
+                  onClick={() => handleGameStart('obstacle')}
+                  className="w-full bg-blue-500 text-white py-3 px-4 rounded hover:bg-blue-600 transition-colors"
+                >
+                  🏃 Obstacle Course
+                </button>
+                <button
+                  onClick={() => handleGameStart('collection')}
+                  className="w-full bg-yellow-500 text-white py-3 px-4 rounded hover:bg-yellow-600 transition-colors"
+                >
+                  💎 Collection Game
+                </button>
+                <button
+                  onClick={() => setShowGameMenu(false)}
+                  className="w-full bg-gray-500 text-white py-3 px-4 rounded hover:bg-gray-600 transition-colors"
+                >
+                  Close Menu
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Zone Information */}
+        {activeZone && (
+          <div className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-lg z-50">
+            <div className="text-center">
+              <div className="text-sm font-semibold">Current Zone: {activeZone}</div>
+              {activeZone === 'Gaming Arcade' && (
+                <div className="text-xs mt-1">Press <kbd className="bg-blue-700 px-1 rounded">G</kbd> to open game menu</div>
+              )}
+            </div>
+          </div>
         )}
         
         {/* Avatar Movement Controls */}

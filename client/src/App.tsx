@@ -4,11 +4,12 @@ import BabylonSceneMultiplayer from './components/BabylonSceneMultiplayer'
 // import BabylonMinimalTest from './components/BabylonMinimalTest'
 import ChatOverlay from './components/ChatOverlay'
 import { useMetaverseStore } from './stores/useMetaverseStore'
-import { socketService } from './lib/socketService'
+import { metaverseService } from './lib/metaverseService'
 import { AvatarCustomizer } from './components/AvatarCustomizer'
 import ErrorBoundary from './components/ErrorBoundary'
 import UserConnectionStatus from './components/UserConnectionStatus'
 import ConnectionDebug from './components/ConnectionDebug'
+// import SupabaseMetaverseTest from './components/SupabaseMetaverseTest' // Disabled
 
 const App: React.FC = () => {
   const [connectionError, setConnectionError] = useState<string | null>(null)
@@ -18,6 +19,7 @@ const App: React.FC = () => {
   const [forceProceed, setForceProceed] = useState(false)
   const [connectionStep, setConnectionStep] = useState('initializing')
   const [version] = useState(() => Date.now()) // Cache busting
+  // Supabase migration test - disabled
   
   console.log('🎮 App component rendering v3...', { version })
   
@@ -49,6 +51,10 @@ const App: React.FC = () => {
       if (e.key === 'F2') {
         setShowCustomizer(!showCustomizer)
       }
+      // F3 Supabase test disabled
+      // if (e.key === 'F3') {
+      //   setShowSupabaseTest(!showSupabaseTest)
+      // }
     }
     window.addEventListener('keydown', handleKeyPress)
     return () => window.removeEventListener('keydown', handleKeyPress)
@@ -64,138 +70,52 @@ const App: React.FC = () => {
     let connectionTimeout: NodeJS.Timeout;
     let isConnecting = false;
     
-    const setupSocketListeners = () => {
+    const setupMetaverseListeners = () => {
       // Connection events
-      socketService.on('connect', () => {
-        console.log('✅ Connected to server')
+      metaverseService.on('connect', () => {
+        console.log('✅ Connected to Supabase')
         console.log('🔧 Setting isConnected to true')
         setConnected(true)
         setConnectionError(null) // Clear any connection errors
         console.log('🔧 isConnected should now be true')
       })
 
-      socketService.on('disconnect', () => {
-        console.log('❌ Disconnected from server')
+      metaverseService.on('disconnect', () => {
+        console.log('❌ Disconnected from Supabase')
         console.log('🔧 Setting isConnected to false')
         setConnected(false)
       })
 
       // User events
-      socketService.on('user-id', (userId: string) => {
-        console.log('👤 Received user ID:', userId)
-        setCurrentUserId(userId)
-      })
-
-      socketService.on('user-data', (userData: any) => {
-        console.log('👤 Received user data:', userData)
-        setCurrentUser(userData)
-      })
-
-      socketService.on('users-update', (users: any[]) => {
-        console.log('👥 Users update:', users)
-        setUsers(users)
-      })
-
-      socketService.on('user-joined', (user: any) => {
+      metaverseService.on('user-joined', (user: any) => {
         console.log('👋 User joined:', user)
-        updateUser(user.id, user)
+        updateUser(user.userId, user)
       })
 
-      socketService.on('user-left', (userId: string) => {
-        console.log('👋 User left:', userId)
-        removeUser(userId)
+      metaverseService.on('user-left', (user: any) => {
+        console.log('👋 User left:', user)
+        removeUser(user.userId)
       })
 
-      socketService.on('user-moved', (data: any) => {
+      // Avatar movement events
+      metaverseService.on('avatar-move', (data: any) => {
+        console.log('🚶 Avatar moved:', data)
         updateUser(data.userId, {
           position: data.position,
           rotation: data.rotation
         })
       })
 
-      // Avatar movement events
-      socketService.on('avatar-moved', (data: any) => {
-        console.log('🚶 Avatar moved:', data)
-        updateUser(data.userId, {
-          position: data.position
-        })
-      })
-
-      // Avatar events
-      socketService.on('avatar-updated', (data: any) => {
-        console.log('🎭 Avatar updated:', data)
-        updateUser(data.userId, {
-          avatarCustomization: data.avatarCustomization
-        })
-      })
-
-      socketService.on('emote-performed', (data: any) => {
-        console.log('😊 Emote performed:', data)
-        // TODO: Handle emote updates properly
-        addChatMessage({
-          id: `emote_${Date.now()}`,
-          userId: data.userId,
-          username: data.username || 'Unknown',
-          message: `😊 ${data.emote}`,
-          timestamp: Date.now(),
-          type: 'action'
-        })
-      })
-
-      // Proximity chat events
-      socketService.on('proximity-message', (data: any) => {
-        console.log('💬 Proximity message:', data)
-        addChatMessage({
-          id: `proximity_${Date.now()}`,
-          userId: data.fromUserId,
-          username: data.username || 'Unknown',
-          message: `[Private] ${data.message}`,
-          timestamp: Date.now(),
-          type: 'whisper'
-        })
-      })
-
-      // Room/World events
-      socketService.on('room-data', (data: any) => {
-        console.log('🏠 Room data received:', data)
-        setCurrentRoom(data.room)
-        
-        if (data.userProgress) {
-          setUserProgress(data.userProgress)
-        }
-        
-        if (data.newAchievements && data.newAchievements.length > 0) {
-          data.newAchievements.forEach((achievement: any) => {
-            addUnlockedAchievement(achievement)
-          })
-        }
-      })
-
       // Chat events
-      socketService.on('chat-message', (message: any) => {
-        console.log('💬 Chat message received:', message)
+      metaverseService.on('chat-message', (message: any) => {
+        console.log('💬 Chat message:', message)
         addChatMessage(message)
       })
 
-      socketService.on('typing-start', (userId: string) => {
-        console.log('⌨️ User started typing:', userId)
-        addTypingUser(userId)
-      })
-
-      socketService.on('typing-stop', (userId: string) => {
-        console.log('⌨️ User stopped typing:', userId)
-        removeTypingUser(userId)
-      })
-
-      // Interaction events
-      socketService.on('interaction-prompt', (data: any) => {
-        console.log('🎯 Interaction prompt:', data)
-        setInteractionPrompt(true, data.message)
-      })
-
-      socketService.on('interaction-result', (data: any) => {
-        console.log('🎯 Interaction result:', data)
-        // Handle interaction results
+      // Proximity chat events
+      metaverseService.on('proximity-message', (message: any) => {
+        console.log('📢 Proximity message:', message)
+        addChatMessage(message) // Use regular chat for proximity messages
       })
     }
 
@@ -218,35 +138,28 @@ const App: React.FC = () => {
           isConnecting = false;
         }, 12000); // Reduced from 15 to 12 seconds
         
-        await socketService.connect()
+        await metaverseService.connect()
         setConnectionStep('socket-connected');
-        setupSocketListeners()
+        setupMetaverseListeners()
         
-        // Force set connected if socket is actually connected
-        if (socketService.isConnected) {
-          console.log('🔧 Socket is connected, forcing state update')
+        // Force set connected if metaverse service is actually connected
+        if (metaverseService.connected) {
+          console.log('🔧 Metaverse service is connected, forcing state update')
           setConnected(true)
           setConnectionError(null) // Clear any previous errors
           setConnectionStep('joining-world');
         } else {
-          console.log('⚠️ Socket connection completed but socket is not connected')
+          console.log('⚠️ Metaverse connection completed but service is not connected')
           // Wait a bit and check again
           setTimeout(() => {
-            if (socketService.isConnected) {
-              console.log('🔧 Socket connected after delay, updating state')
+            if (metaverseService.connected) {
+              console.log('🔧 Metaverse connected after delay, updating state')
               setConnected(true)
               setConnectionError(null)
               setConnectionStep('joining-world');
             }
           }, 1000);
         }
-        
-        // Join the default world
-        const username = `Player_${Math.random().toString(36).substr(2, 6)}`
-        socketService.emit('join-world', {
-          worldId: 'main-world',
-          username: username
-        })
         
         clearTimeout(connectionTimeout);
         isConnecting = false;
@@ -289,17 +202,17 @@ const App: React.FC = () => {
       isConnected,
       connectionError,
       forceProceed,
-      socketConnected: socketService.isConnected,
+      metaverseConnected: metaverseService.connected,
       isInitialized
     });
     
     // Sync connection state if there's a mismatch
-    if (socketService.isConnected && !isConnected && !connectionError) {
-      console.log('🔧 Syncing connection state - socket is connected but state shows disconnected')
+    if (metaverseService.connected && !isConnected && !connectionError) {
+      console.log('🔧 Syncing connection state - metaverse is connected but state shows disconnected')
       setConnected(true)
       setConnectionError(null)
-    } else if (!socketService.isConnected && isConnected) {
-      console.log('🔧 Syncing connection state - socket is disconnected but state shows connected')
+    } else if (!metaverseService.connected && isConnected) {
+      console.log('🔧 Syncing connection state - metaverse is disconnected but state shows connected')
       setConnected(false)
     }
   }, [isConnected, connectionError, forceProceed, isInitialized]);
@@ -307,8 +220,8 @@ const App: React.FC = () => {
   // Periodic connection state check
   useEffect(() => {
     const interval = setInterval(() => {
-      if (isInitialized && socketService.isConnected && !isConnected) {
-        console.log('🔧 Periodic check: Socket is connected but state is not, fixing...')
+      if (isInitialized && metaverseService.connected && !isConnected) {
+        console.log('🔧 Periodic check: Metaverse is connected but state is not, fixing...')
         setConnected(true)
         setConnectionError(null)
       }
@@ -332,7 +245,7 @@ const App: React.FC = () => {
       }}>
         <h1 style={{ fontSize: '24px', marginBottom: '20px' }}>🎮 Debug Mode</h1>
         <div style={{ fontSize: '16px', marginBottom: '10px' }}>
-          Socket Connected: {socketService.isConnected ? '✅' : '❌'}
+          Supabase Connected: {metaverseService.connected ? '✅' : '❌'}
         </div>
         <div style={{ fontSize: '16px', marginBottom: '10px' }}>
           Is Connected: {isConnected ? 'Yes' : 'No'}
@@ -364,12 +277,12 @@ const App: React.FC = () => {
     )
   }
 
-  // Check if we should proceed (connected, forced, or socket connected)
-  const shouldProceed = isConnected || forceProceed || socketService.isConnected;
+  // Check if we should proceed (connected, forced, or metaverse connected)
+  const shouldProceed = isConnected || forceProceed || metaverseService.connected;
   const shouldShowLoading = !shouldProceed && !connectionError;
   
   console.log('🔧 App render v3: isConnected =', isConnected, 'connectionError =', connectionError, 'forceProceed =', forceProceed);
-  console.log('🔧 Socket service connected =', socketService.isConnected);
+      console.log('🔧 Metaverse service connected =', metaverseService.connected);
   
   // Simplified loading condition
   if (shouldShowLoading) {
@@ -396,10 +309,10 @@ const App: React.FC = () => {
           {isConnected && 'Loading 3D world...'}
         </div>
         <div style={{ fontSize: '14px', opacity: 0.7, marginTop: '5px' }}>
-          {socketService.isConnected ? '✅ Socket connected' : '🔄 Connecting socket...'}
+          {metaverseService.connected ? '✅ Supabase connected' : '🔄 Connecting to Supabase...'}
         </div>
         <div style={{ fontSize: '12px', opacity: 0.6, marginTop: '10px' }}>
-          Debug: Socket connected = {socketService.isConnected ? 'Yes' : 'No'}
+                      Debug: Supabase connected = {metaverseService.connected ? 'Yes' : 'No'}
         </div>
         <div style={{ fontSize: '12px', opacity: 0.6, marginTop: '5px' }}>
           Version: {version}
@@ -440,7 +353,7 @@ const App: React.FC = () => {
         </button>
         <div style={{ fontSize: '12px', opacity: 0.6, marginTop: '10px' }}>
           Debug Info: isConnected={isConnected ? 'true' : 'false'}, 
-          socketConnected={socketService.isConnected ? 'true' : 'false'}, 
+                      socketConnected={metaverseService.connected ? 'true' : 'false'}, 
           connectionError={connectionError || 'none'}
         </div>
         <style>
@@ -539,6 +452,43 @@ const App: React.FC = () => {
           connectionError={connectionError}
           isInitialized={isInitialized}
         />
+        
+        {/* Supabase Test Component - Disabled */}
+        {/* {showSupabaseTest && (
+          <div style={{
+            position: 'absolute',
+            zIndex: 1000,
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(10,10,20,0.95)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(8px)',
+            overflow: 'auto'
+          }}>
+            <SupabaseMetaverseTest />
+            <button
+              style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                padding: '8px 16px',
+                fontSize: '14px',
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                color: 'white',
+                border: '1px solid rgba(255, 255, 255, 0.3)',
+                borderRadius: '6px',
+                cursor: 'pointer'
+              }}
+              onClick={() => setShowSupabaseTest(false)}
+            >
+              Close (F3)
+            </button>
+          </div>
+        )} */}
         {/* Avatar Customizer Modal */}
         {showCustomizer && (
           <div style={{
