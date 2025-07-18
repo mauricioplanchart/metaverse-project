@@ -1,62 +1,72 @@
 import { supabase } from './supabase'
 
 // Supabase-based metaverse service for real-time multiplayer features
+// VERSION: 2.1.0 - Supabase Only (No Socket.IO)
 class MetaverseService {
   private channel: any = null
   private listeners: Map<string, ((...args: any[]) => void)[]> = new Map()
   private isConnected = false
   private currentUserId: string | null = null
   private currentUsername: string | null = null
-  // private currentWorld: string | null = null // Unused for now
 
   constructor() {
-    console.log('🎮 MetaverseService initialized with Supabase')
+    console.log('🎮 MetaverseService v2.1.0 initialized - Supabase Only Mode')
+    console.log('🔧 Force Supabase mode - Socket.IO completely disabled')
   }
 
-  // Connect to Supabase real-time
+  // Connect to Supabase real-time ONLY
   async connect(): Promise<boolean> {
     try {
-      console.log('🔌 Connecting to Supabase real-time...')
+      console.log('🔌 Connecting to Supabase real-time (v2.1.0)...')
+      console.log('🚫 Socket.IO connections are completely disabled')
       
-      this.channel = supabase.channel('metaverse')
+      // Force Supabase connection only
+      if (!supabase) {
+        console.error('❌ Supabase client not available')
+        return false
+      }
+      
+      this.channel = supabase.channel('metaverse-v2')
         .on('presence', { event: 'sync' }, () => {
-          console.log('✅ Supabase presence sync')
+          console.log('✅ Supabase presence sync (v2.1.0)')
           this.emit('presenceSync')
         })
         .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-          console.log('👤 User joined:', key, newPresences)
+          console.log('👤 User joined (v2.1.0):', key, newPresences)
           this.emit('userJoined', { key, presences: newPresences })
         })
         .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-          console.log('👋 User left:', key, leftPresences)
+          console.log('👋 User left (v2.1.0):', key, leftPresences)
           this.emit('userLeft', { key, presences: leftPresences })
         })
         .on('broadcast', { event: 'avatar_update' }, (payload) => {
-          console.log('🎮 Avatar update received:', payload)
+          console.log('🎮 Avatar update received (v2.1.0):', payload)
           this.emit('avatarUpdate', payload)
         })
         .on('broadcast', { event: 'chat_message' }, (payload) => {
-          console.log('💬 Chat message received:', payload)
+          console.log('💬 Chat message received (v2.1.0):', payload)
           this.emit('chatMessage', payload)
         })
         .on('broadcast', { event: 'world_event' }, (payload) => {
-          console.log('🌍 World event received:', payload)
+          console.log('🌍 World event received (v2.1.0):', payload)
           this.emit('worldEvent', payload)
         })
         .subscribe((status) => {
-          console.log('📡 Supabase subscription status:', status)
+          console.log('📡 Supabase subscription status (v2.1.0):', status)
           if (status === 'SUBSCRIBED') {
             this.isConnected = true
             this.emit('connected')
+            console.log('✅ Successfully connected to Supabase (v2.1.0)')
           } else if (status === 'CHANNEL_ERROR') {
             this.isConnected = false
             this.emit('error', 'Supabase channel error')
+            console.error('❌ Supabase channel error (v2.1.0)')
           }
         })
 
       return true
     } catch (error) {
-      console.error('❌ Failed to connect to Supabase:', error)
+      console.error('❌ Failed to connect to Supabase (v2.1.0):', error)
       return false
     }
   }
