@@ -1,8 +1,7 @@
-import { io, Socket } from 'socket.io-client'
-import { config } from './config'
 import { supabase } from './supabase'
+import { config } from './config'
 
-type ConnectionType = 'supabase' | 'socketio' | 'websocket' | 'polling'
+type ConnectionType = 'supabase' | 'websocket'
 
 interface ConnectionState {
   isConnected: boolean
@@ -12,7 +11,6 @@ interface ConnectionState {
 }
 
 class ConnectionManager {
-  private socket: Socket | null = null
   private ws: WebSocket | null = null
   private supabaseChannel: any = null
   private serverUrl = config.isDevelopment ? 'http://localhost:3001' : null // No production server URL - use Supabase only
@@ -28,8 +26,6 @@ class ConnectionManager {
 
   constructor() {
     console.log('🔧 ConnectionManager initialized')
-    console.log('🔧 Config debug:', config)
-    console.log('🌐 Using environment URL:', this.serverUrl)
   }
 
   async connect(type: ConnectionType = 'supabase'): Promise<boolean> {
@@ -45,24 +41,12 @@ class ConnectionManager {
       switch (type) {
         case 'supabase':
           return await this.connectSupabase();
-        case 'socketio':
-          if (!this.serverUrl) {
-            console.log('⚠️ No server URL configured for Socket.IO');
-            return false;
-          }
-          return await this.connectSocketIO();
         case 'websocket':
           if (!this.serverUrl) {
             console.log('⚠️ No server URL configured for WebSocket');
             return false;
           }
           return await this.connectWebSocket();
-        case 'polling':
-          if (!this.serverUrl) {
-            console.log('⚠️ No server URL configured for polling');
-            return false;
-          }
-          return await this.connectPolling();
         default:
           console.error('❌ Unknown connection type:', type);
           return false;
@@ -77,145 +61,58 @@ class ConnectionManager {
   }
 
   private async connectSupabase(): Promise<boolean> {
-    return new Promise((resolve) => {
-      try {
-        console.log('🔌 Connecting via Supabase Realtime...')
-        
-        if (!config.supabaseUrl || !config.supabaseAnonKey) {
-          console.error('❌ Supabase configuration missing')
-          this.state.isConnecting = false
-          this.state.error = 'Supabase configuration missing'
-          this.emit('connectionError', 'Supabase configuration missing')
-          resolve(false)
-          return
-        }
-
-        // Create a channel for real-time communication
-        this.supabaseChannel = supabase
-          .channel('metaverse-realtime')
-          .on('presence', { event: 'sync' }, () => {
-            console.log('✅ Supabase presence sync')
-          })
-          .on('presence', { event: 'join' }, ({ newPresences }) => {
-            console.log('👤 User joined:', newPresences)
-            this.emit('userJoined', newPresences)
-          })
-          .on('presence', { event: 'leave' }, ({ leftPresences }) => {
-            console.log('👋 User left:', leftPresences)
-            this.emit('userLeft', leftPresences)
-          })
-          .on('broadcast', { event: 'avatar-update' }, (payload) => {
-            console.log('🎭 Avatar update received:', payload)
-            this.emit('avatarUpdate', payload)
-          })
-          .on('broadcast', { event: 'chat-message' }, (payload) => {
-            console.log('💬 Chat message received:', payload)
-            this.emit('chatMessage', payload)
-          })
-          .on('broadcast', { event: 'world-interaction' }, (payload) => {
-            console.log('🌍 World interaction received:', payload)
-            this.emit('worldInteraction', payload)
-          })
-          .subscribe((status) => {
-            console.log('🔌 Supabase subscription status:', status)
-            if (status === 'SUBSCRIBED') {
-              console.log('✅ Supabase Realtime connected!')
-              this.state.isConnected = true
-              this.state.isConnecting = false
-              this.state.error = null
-              this.retryCount = 0
-              this.emit('connectionChanged', true)
-              resolve(true)
-            } else if (status === 'CHANNEL_ERROR') {
-              console.error('❌ Supabase channel error')
-              this.state.isConnected = false
-              this.state.isConnecting = false
-              this.state.error = 'Supabase channel error'
-              this.emit('connectionError', 'Supabase channel error')
-              resolve(false)
-            }
-          })
-
-        // Set timeout
-        setTimeout(() => {
-          if (!this.state.isConnected) {
+    try {
+      console.log('🔌 Connecting via Supabase...')
+      
+      // Subscribe to real-time changes
+      this.supabaseChannel = supabase
+        .channel('metaverse')
+        .on('presence', { event: 'sync' }, () => {
+          console.log('✅ Supabase presence sync')
+        })
+        .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+          console.log('👤 User joined:', key, newPresences)
+          this.emit('userJoined', { key, presences: newPresences })
+        })
+        .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+          console.log('👋 User left:', key, leftPresences)
+          this.emit('userLeft', { key, presences: leftPresences })
+        })
+        .on('broadcast', { event: 'avatar_update' }, (payload) => {
+          console.log('🎮 Avatar update received:', payload)
+          this.emit('avatarUpdate', payload)
+        })
+        .on('broadcast', { event: 'chat_message' }, (payload) => {
+          console.log('💬 Chat message received:', payload)
+          this.emit('chatMessage', payload)
+        })
+        .on('broadcast', { event: 'world_event' }, (payload) => {
+          console.log('🌍 World event received:', payload)
+          this.emit('worldEvent', payload)
+        })
+        .subscribe((status) => {
+          console.log('📡 Supabase subscription status:', status)
+          if (status === 'SUBSCRIBED') {
+            this.state.isConnected = true
             this.state.isConnecting = false
-            this.state.error = 'Supabase connection timeout'
-            this.emit('connectionError', 'Supabase connection timeout')
-            resolve(false)
+            this.state.error = null
+            this.state.type = 'supabase'
+            this.retryCount = 0
+            this.emit('connectionChanged', true)
+          } else if (status === 'CHANNEL_ERROR') {
+            this.state.isConnected = false
+            this.state.isConnecting = false
+            this.state.error = 'Supabase channel error'
+            this.emit('connectionError', 'Supabase channel error')
           }
-        }, 10000)
+        })
 
-      } catch (error) {
-        console.error('❌ Supabase connection error:', error)
-        this.state.isConnecting = false
-        this.state.error = error instanceof Error ? error.message : 'Supabase connection error'
-        this.emit('connectionError', this.state.error)
-        resolve(false)
-      }
-    })
-  }
-
-  private async connectSocketIO(): Promise<boolean> {
-    if (!this.serverUrl) {
-      console.log('⚠️ No server URL configured for Socket.IO');
-      return false;
+      return this.state.isConnected
+    } catch (error) {
+      console.error('❌ Supabase connection error:', error)
+      this.state.error = error instanceof Error ? error.message : 'Supabase connection failed'
+      return false
     }
-
-    const serverUrl = this.serverUrl; // Store in local variable after null check
-
-    return new Promise((resolve) => {
-      try {
-        console.log('🔌 Connecting via Socket.IO...')
-        
-        this.socket = io(serverUrl, {
-          transports: ['websocket', 'polling'],
-          timeout: 10000,
-          forceNew: true,
-          reconnection: false
-        })
-
-        this.socket.on('connect', () => {
-          console.log('✅ Socket.IO connected!')
-          this.state.isConnected = true
-          this.state.isConnecting = false
-          this.state.error = null
-          this.retryCount = 0
-          this.emit('connectionChanged', true)
-          resolve(true)
-        })
-
-        this.socket.on('disconnect', () => {
-          console.log('❌ Socket.IO disconnected')
-          this.state.isConnected = false
-          this.state.isConnecting = false
-          this.emit('connectionChanged', false)
-        })
-
-        this.socket.on('connect_error', (error) => {
-          console.error('❌ Socket.IO error:', error.message)
-          this.state.isConnected = false
-          this.state.isConnecting = false
-          this.state.error = error.message
-          this.emit('connectionError', error.message)
-          resolve(false)
-        })
-
-        // Set timeout
-        setTimeout(() => {
-          if (!this.state.isConnected) {
-            this.state.isConnecting = false
-            this.state.error = 'Socket.IO connection timeout'
-            this.emit('connectionError', 'Socket.IO connection timeout')
-            resolve(false)
-          }
-        }, 10000)
-
-      } catch (error) {
-        console.error('❌ Socket.IO creation error:', error)
-        resolve(false)
-      }
-    })
   }
 
   private async connectWebSocket(): Promise<boolean> {
@@ -238,6 +135,7 @@ class ConnectionManager {
           this.state.isConnected = true
           this.state.isConnecting = false
           this.state.error = null
+          this.state.type = 'websocket'
           this.retryCount = 0
           this.emit('connectionChanged', true)
           resolve(true)
@@ -285,75 +183,13 @@ class ConnectionManager {
     })
   }
 
-  private async connectPolling(): Promise<boolean> {
-    if (!this.serverUrl) {
-      console.log('⚠️ No server URL configured for polling');
-      return false;
-    }
-
-    const serverUrl = this.serverUrl; // Store in local variable after null check
-
-    return new Promise((resolve) => {
-      try {
-        console.log('🔌 Connecting via polling...')
-        
-        this.socket = io(serverUrl, {
-          transports: ['polling'],
-          timeout: 10000,
-          forceNew: true,
-          reconnection: false
-        })
-
-        this.socket.on('connect', () => {
-          console.log('✅ Polling connected!')
-          this.state.isConnected = true
-          this.state.isConnecting = false
-          this.state.error = null
-          this.retryCount = 0
-          this.emit('connectionChanged', true)
-          resolve(true)
-        })
-
-        this.socket.on('disconnect', () => {
-          console.log('❌ Polling disconnected')
-          this.state.isConnected = false
-          this.state.isConnecting = false
-          this.emit('connectionChanged', false)
-        })
-
-        this.socket.on('connect_error', (error) => {
-          console.error('❌ Polling error:', error.message)
-          this.state.isConnected = false
-          this.state.isConnecting = false
-          this.state.error = error.message
-          this.emit('connectionError', error.message)
-          resolve(false)
-        })
-
-        // Set timeout
-        setTimeout(() => {
-          if (!this.state.isConnected) {
-            this.state.isConnecting = false
-            this.state.error = 'Polling connection timeout'
-            this.emit('connectionError', 'Polling connection timeout')
-            resolve(false)
-          }
-        }, 10000)
-
-      } catch (error) {
-        console.error('❌ Polling creation error:', error)
-        resolve(false)
-      }
-    })
-  }
-
   async retryWithFallback(): Promise<boolean> {
-    // Always try Supabase first, then fallback to other methods only if serverUrl is available
+    // Always try Supabase first, then fallback to WebSocket only if serverUrl is available
     const types: ConnectionType[] = ['supabase'];
     
-    // Only add other connection types if we have a server URL
+    // Only add WebSocket if we have a server URL (development only)
     if (this.serverUrl) {
-      types.push('socketio', 'websocket', 'polling');
+      types.push('websocket');
     }
     
     for (const type of types) {
@@ -386,39 +222,36 @@ class ConnectionManager {
       this.supabaseChannel = null
     }
     
-    if (this.socket) {
-      this.socket.disconnect()
-      this.socket = null
-    }
-    
     if (this.ws) {
       this.ws.close()
       this.ws = null
     }
-
+    
     this.state.isConnected = false
     this.state.isConnecting = false
     this.state.error = null
     this.state.type = null
-    this.retryCount = 0
-    
     this.emit('connectionChanged', false)
   }
 
   send(event: string, data?: any): void {
-    if (this.supabaseChannel && this.state.isConnected) {
-      // Send via Supabase broadcast
+    if (!this.state.isConnected) {
+      console.warn('⚠️ Not connected, cannot send message')
+      return
+    }
+
+    const message = { type: event, data, timestamp: Date.now() }
+
+    if (this.state.type === 'supabase' && this.supabaseChannel) {
       this.supabaseChannel.send({
         type: 'broadcast',
         event: event,
-        payload: data
+        payload: message
       })
-    } else if (this.socket?.connected) {
-      this.socket.emit(event, data)
-    } else if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({ type: event, payload: data }))
+    } else if (this.state.type === 'websocket' && this.ws) {
+      this.ws.send(JSON.stringify(message))
     } else {
-      console.warn('⚠️ No active connection, cannot send:', event)
+      console.warn('⚠️ No active connection for sending message')
     }
   }
 
@@ -427,41 +260,39 @@ class ConnectionManager {
       this.listeners.set(event, [])
     }
     this.listeners.get(event)!.push(callback)
-
-    // Also listen to socket events if available
-    if (this.socket) {
-      this.socket.on(event, callback)
-    }
   }
 
   off(event: string, callback?: (...args: any[]) => void): void {
-    const listeners = this.listeners.get(event) || []
-    if (callback) {
-      const index = listeners.indexOf(callback)
-      if (index > -1) {
-        listeners.splice(index, 1)
-      }
-    } else {
-      this.listeners.delete(event)
+    if (!this.listeners.has(event)) {
+      return
     }
 
-    if (this.socket) {
-      this.socket.off(event, callback)
+    if (!callback) {
+      this.listeners.delete(event)
+    } else {
+      const callbacks = this.listeners.get(event)!
+      const index = callbacks.indexOf(callback)
+      if (index > -1) {
+        callbacks.splice(index, 1)
+      }
+      if (callbacks.length === 0) {
+        this.listeners.delete(event)
+      }
     }
   }
 
   private emit(event: string, ...args: any[]): void {
-    const listeners = this.listeners.get(event) || []
-    listeners.forEach(callback => {
-      try {
-        callback(...args)
-      } catch (error) {
-        console.error('❌ Error in event listener:', error)
-      }
-    })
+    if (this.listeners.has(event)) {
+      this.listeners.get(event)!.forEach(callback => {
+        try {
+          callback(...args)
+        } catch (error) {
+          console.error(`❌ Error in event listener for ${event}:`, error)
+        }
+      })
+    }
   }
 
-  // Getters
   get isConnected(): boolean {
     return this.state.isConnected
   }
