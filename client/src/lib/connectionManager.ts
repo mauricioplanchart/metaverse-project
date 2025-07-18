@@ -1,192 +1,161 @@
 import { supabase } from './supabase'
-// import { config } from './config' // Removed unused import
 
-type ConnectionType = 'supabase' | 'websocket'
-
-interface ConnectionState {
-  isConnected: boolean
-  isConnecting: boolean
-  error: string | null
-  type: ConnectionType | null
-}
-
+// Supabase-only connection manager
+// VERSION: 2.1.0 - Completely removed Socket.IO
 class ConnectionManager {
-  private ws: WebSocket | null = null
-  private supabaseChannel: any = null
-  private serverUrl = null // No server URL - use Supabase only
+  private isConnected = false
+  private currentUserId: string | null = null
+  private currentUsername: string | null = null
   private listeners: Map<string, ((...args: any[]) => void)[]> = new Map()
-  private state: ConnectionState = {
-    isConnected: false,
-    isConnecting: false,
-    error: null,
-    type: null
-  }
-  private retryCount = 0
-  private maxRetries = 3
+  private channel: any = null
 
   constructor() {
-    console.log('🔧 ConnectionManager initialized')
+    console.log('🔌 ConnectionManager v2.1.0 initialized - Supabase Only')
+    console.log('🚫 Socket.IO completely removed from connection manager')
   }
 
-  async connect(type: ConnectionType = 'supabase'): Promise<boolean> {
-    if (this.state.isConnecting) {
-      console.log('🔄 Already connecting...');
-      return false;
-    }
-
-    this.state.isConnecting = true;
-    this.state.error = null;
-
+  async connect(): Promise<boolean> {
     try {
-      switch (type) {
-        case 'supabase':
-          return await this.connectSupabase();
-        case 'websocket':
-          if (!this.serverUrl) {
-            console.log('⚠️ No server URL configured for WebSocket');
-            return false;
-          }
-          return await this.connectWebSocket();
-        default:
-          console.error('❌ Unknown connection type:', type);
-          return false;
-      }
-    } catch (error) {
-      console.error('❌ Connection error:', error);
-      this.state.error = error instanceof Error ? error.message : 'Unknown error';
-      return false;
-    } finally {
-      this.state.isConnecting = false;
-    }
-  }
-
-  private async connectSupabase(): Promise<boolean> {
-    try {
-      console.log('🔌 Connecting via Supabase...')
+      console.log('🔌 Connecting to Supabase real-time only...')
+      console.log('🚫 Socket.IO connections are completely disabled')
       
-      // Subscribe to real-time changes
-      this.supabaseChannel = supabase
-        .channel('metaverse')
+      if (!supabase) {
+        console.error('❌ Supabase client not available')
+        return false
+      }
+
+      // Subscribe to real-time channel
+      this.channel = supabase.channel('metaverse-v2')
         .on('presence', { event: 'sync' }, () => {
-          console.log('✅ Supabase presence sync')
+          console.log('✅ Supabase presence sync (v2.1.0)')
+          this.emit('presenceSync')
         })
-        .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-          console.log('👤 User joined:', key, newPresences)
-          this.emit('userJoined', { key, presences: newPresences })
+        .on('presence', { event: 'join' }, ({ newPresences }) => {
+          console.log('👋 User joined:', newPresences)
+          this.emit('userJoined', newPresences)
         })
-        .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-          console.log('👋 User left:', key, leftPresences)
-          this.emit('userLeft', { key, presences: leftPresences })
+        .on('presence', { event: 'leave' }, ({ leftPresences }) => {
+          console.log('👋 User left:', leftPresences)
+          this.emit('userLeft', leftPresences)
         })
-        .on('broadcast', { event: 'avatar_update' }, (payload) => {
-          console.log('🎮 Avatar update received:', payload)
+        .on('broadcast', { event: 'avatar-update' }, (payload) => {
+          console.log('🎭 Avatar update received:', payload)
           this.emit('avatarUpdate', payload)
         })
-        .on('broadcast', { event: 'chat_message' }, (payload) => {
+        .on('broadcast', { event: 'chat-message' }, (payload) => {
           console.log('💬 Chat message received:', payload)
           this.emit('chatMessage', payload)
         })
-        .on('broadcast', { event: 'world_event' }, (payload) => {
-          console.log('🌍 World event received:', payload)
-          this.emit('worldEvent', payload)
-        })
-        .subscribe((status) => {
-          console.log('📡 Supabase subscription status:', status)
-          if (status === 'SUBSCRIBED') {
-            this.state.isConnected = true
-            this.state.isConnecting = false
-            this.state.error = null
-            this.state.type = 'supabase'
-            this.retryCount = 0
-            this.emit('connectionChanged', true)
-          } else if (status === 'CHANNEL_ERROR') {
-            this.state.isConnected = false
-            this.state.isConnecting = false
-            this.state.error = 'Supabase channel error'
-            this.emit('connectionError', 'Supabase channel error')
-          }
-        })
 
-      return this.state.isConnected
+      await this.channel.subscribe()
+      
+      this.isConnected = true
+      console.log('✅ Connected to Supabase real-time (v2.1.0)')
+      this.emit('connected')
+      
+      return true
     } catch (error) {
-      console.error('❌ Supabase connection error:', error)
-      this.state.error = error instanceof Error ? error.message : 'Supabase connection failed'
+      console.error('❌ Failed to connect to Supabase:', error)
+      this.isConnected = false
+      this.emit('error', error)
       return false
     }
   }
 
-  private async connectWebSocket(): Promise<boolean> {
-    console.log('⚠️ WebSocket connections are not supported - use Supabase only');
-    return false;
-  }
-
-  async retryWithFallback(): Promise<boolean> {
-    // Only use Supabase - no fallback to WebSocket
-    const types: ConnectionType[] = ['supabase'];
-    
-    for (const type of types) {
-      if (this.retryCount >= this.maxRetries) {
-        console.error('❌ Max retry attempts reached')
-        return false
-      }
-
-      console.log(`🔄 Trying connection type: ${type} (attempt ${this.retryCount + 1})`)
-      this.retryCount++
+  async disconnect(): Promise<void> {
+    try {
+      console.log('🔌 Disconnecting from Supabase real-time...')
       
-      const connected = await this.connect(type)
-      if (connected) {
-        console.log(`✅ Connected successfully with ${type}`)
-        return true
+      if (this.channel) {
+        await this.channel.unsubscribe()
+        this.channel = null
       }
-
-      // Wait before trying next type
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      this.isConnected = false
+      this.currentUserId = null
+      this.currentUsername = null
+      
+      console.log('✅ Disconnected from Supabase real-time')
+      this.emit('disconnected')
+    } catch (error) {
+      console.error('❌ Error disconnecting:', error)
     }
-
-    return false
   }
 
-  disconnect(): void {
-    console.log('🔌 Disconnecting from multiplayer server...')
-    
-    if (this.supabaseChannel) {
-      supabase.removeChannel(this.supabaseChannel)
-      this.supabaseChannel = null
+  async joinWorld(worldId: string, userId: string, username: string): Promise<boolean> {
+    try {
+      console.log(`🌍 Joining world ${worldId} as ${username} (${userId})`)
+      
+      this.currentUserId = userId
+      this.currentUsername = username
+      
+      if (this.channel) {
+        await this.channel.track({
+          user_id: userId,
+          username: username,
+          world_id: worldId,
+          position: { x: 0, y: 0, z: 0 },
+          timestamp: Date.now()
+        })
+      }
+      
+      console.log('✅ Successfully joined world via Supabase')
+      this.emit('worldJoined', { worldId, userId, username })
+      
+      return true
+    } catch (error) {
+      console.error('❌ Failed to join world:', error)
+      return false
     }
-    
-    if (this.ws) {
-      this.ws.close()
-      this.ws = null
-    }
-    
-    this.state.isConnected = false
-    this.state.isConnecting = false
-    this.state.error = null
-    this.state.type = null
-    this.emit('connectionChanged', false)
   }
 
-  send(event: string, data?: any): void {
-    if (!this.state.isConnected) {
-      console.warn('⚠️ Not connected, cannot send message')
-      return
-    }
-
-    const message = { type: event, data, timestamp: Date.now() }
-
-    if (this.state.type === 'supabase' && this.supabaseChannel) {
-      this.supabaseChannel.send({
-        type: 'broadcast',
-        event: event,
-        payload: message
+  async updateAvatarPosition(position: { x: number; y: number; z: number }): Promise<void> {
+    if (!this.isConnected || !this.channel) return
+    
+    try {
+      await this.channel.track({
+        user_id: this.currentUserId,
+        username: this.currentUsername,
+        position,
+        timestamp: Date.now()
       })
-    } else if (this.state.type === 'websocket' && this.ws) {
-      this.ws.send(JSON.stringify(message))
-    } else {
-      console.warn('⚠️ No active connection for sending message')
+      
+      // Broadcast position update
+      await this.channel.send({
+        type: 'broadcast',
+        event: 'avatar-update',
+        payload: {
+          userId: this.currentUserId,
+          username: this.currentUsername,
+          position,
+          timestamp: Date.now()
+        }
+      })
+    } catch (error) {
+      console.error('❌ Failed to update avatar position:', error)
     }
   }
 
+  async sendChatMessage(message: string): Promise<void> {
+    if (!this.isConnected || !this.channel) return
+    
+    try {
+      await this.channel.send({
+        type: 'broadcast',
+        event: 'chat-message',
+        payload: {
+          userId: this.currentUserId,
+          username: this.currentUsername,
+          message,
+          timestamp: Date.now()
+        }
+      })
+    } catch (error) {
+      console.error('❌ Failed to send chat message:', error)
+    }
+  }
+
+  // Event emitter methods
   on(event: string, callback: (...args: any[]) => void): void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, [])
@@ -194,56 +163,36 @@ class ConnectionManager {
     this.listeners.get(event)!.push(callback)
   }
 
-  off(event: string, callback?: (...args: any[]) => void): void {
-    if (!this.listeners.has(event)) {
-      return
-    }
-
-    if (!callback) {
-      this.listeners.delete(event)
-    } else {
-      const callbacks = this.listeners.get(event)!
+  off(event: string, callback: (...args: any[]) => void): void {
+    const callbacks = this.listeners.get(event)
+    if (callbacks) {
       const index = callbacks.indexOf(callback)
       if (index > -1) {
         callbacks.splice(index, 1)
-      }
-      if (callbacks.length === 0) {
-        this.listeners.delete(event)
       }
     }
   }
 
   private emit(event: string, ...args: any[]): void {
-    if (this.listeners.has(event)) {
-      this.listeners.get(event)!.forEach(callback => {
-        try {
-          callback(...args)
-        } catch (error) {
-          console.error(`❌ Error in event listener for ${event}:`, error)
-        }
-      })
+    const callbacks = this.listeners.get(event)
+    if (callbacks) {
+      callbacks.forEach(callback => callback(...args))
     }
   }
 
-  get isConnected(): boolean {
-    return this.state.isConnected
+  // Getters
+  get connected(): boolean {
+    return this.isConnected
   }
 
-  get isConnecting(): boolean {
-    return this.state.isConnecting
+  get userId(): string | null {
+    return this.currentUserId
   }
 
-  get error(): string | null {
-    return this.state.error
-  }
-
-  get connectionType(): ConnectionType | null {
-    return this.state.type
-  }
-
-  get retryAttempts(): number {
-    return this.retryCount
+  get username(): string | null {
+    return this.currentUsername
   }
 }
 
+// Export singleton instance
 export const connectionManager = new ConnectionManager() 
