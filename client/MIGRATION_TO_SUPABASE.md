@@ -10,7 +10,7 @@ The migration has been successfully completed with all Socket.IO dependencies re
 
 ### Before (Socket.IO)
 ```
-Frontend (Netlify) ←→ Backend Server (Render) ←→ Database
+Frontend (Netlify) ←→ Backend Server (Node.js) ←→ Database
 ```
 - Required separate backend server
 - CORS configuration issues

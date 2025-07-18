@@ -13,7 +13,7 @@ This document outlines the successful migration from Socket.IO to Supabase Realt
 
 ### Before (Socket.IO)
 ```
-Frontend (Netlify) ←→ Backend Server (Render) ←→ Database
+Frontend (Netlify) ←→ Backend Server (Node.js) ←→ Database
 ```
 
 ### After (Supabase)

@@ -13,7 +13,7 @@ interface ConnectionState {
 class ConnectionManager {
   private ws: WebSocket | null = null
   private supabaseChannel: any = null
-  private serverUrl = config.isDevelopment ? 'http://localhost:3001' : null // No production server URL - use Supabase only
+  private serverUrl = null // No server URL - use Supabase only
   private listeners: Map<string, ((...args: any[]) => void)[]> = new Map()
   private state: ConnectionState = {
     isConnected: false,
@@ -116,81 +116,13 @@ class ConnectionManager {
   }
 
   private async connectWebSocket(): Promise<boolean> {
-    if (!this.serverUrl) {
-      console.log('⚠️ No server URL configured for WebSocket');
-      return false;
-    }
-
-    const serverUrl = this.serverUrl; // Store in local variable after null check
-
-    return new Promise((resolve) => {
-      try {
-        console.log('🔌 Connecting via WebSocket...')
-        const wsUrl = serverUrl.replace('http', 'ws')
-        
-        this.ws = new WebSocket(wsUrl)
-
-        this.ws.onopen = () => {
-          console.log('✅ WebSocket connected!')
-          this.state.isConnected = true
-          this.state.isConnecting = false
-          this.state.error = null
-          this.state.type = 'websocket'
-          this.retryCount = 0
-          this.emit('connectionChanged', true)
-          resolve(true)
-        }
-
-        this.ws.onclose = () => {
-          console.log('❌ WebSocket disconnected')
-          this.state.isConnected = false
-          this.state.isConnecting = false
-          this.emit('connectionChanged', false)
-        }
-
-        this.ws.onerror = (error) => {
-          console.error('❌ WebSocket error:', error)
-          this.state.isConnected = false
-          this.state.isConnecting = false
-          this.state.error = 'WebSocket connection error'
-          this.emit('connectionError', 'WebSocket connection error')
-          resolve(false)
-        }
-
-        this.ws.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data)
-            this.emit(data.type || 'message', data)
-          } catch (error) {
-            console.error('❌ Error parsing WebSocket message:', error)
-          }
-        }
-
-        // Set timeout
-        setTimeout(() => {
-          if (!this.state.isConnected) {
-            this.state.isConnecting = false
-            this.state.error = 'WebSocket connection timeout'
-            this.emit('connectionError', 'WebSocket connection timeout')
-            resolve(false)
-          }
-        }, 10000)
-
-      } catch (error) {
-        console.error('❌ WebSocket creation error:', error)
-        resolve(false)
-      }
-    })
+    console.log('⚠️ WebSocket connections are not supported - use Supabase only');
+    return false;
   }
 
   async retryWithFallback(): Promise<boolean> {
-    // Always try Supabase first, then fallback to WebSocket only if serverUrl is available
+    // Only use Supabase - no fallback to WebSocket
     const types: ConnectionType[] = ['supabase'];
-    
-    // Only add WebSocket if we have a server URL (development only)
-    if (this.serverUrl) {
-      types.push('websocket');
-    }
     
     for (const type of types) {
       if (this.retryCount >= this.maxRetries) {

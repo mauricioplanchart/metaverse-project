@@ -1,25 +1,25 @@
-// Database Backup Strategy
+// Database Backup Strategy for Supabase
 const backupConfig = {
-    // PostgreSQL backup commands
+    // PostgreSQL backup commands for Supabase
     postgres: {
         backup: 'pg_dump -h $DB_HOST -U $DB_USER -d $DB_NAME > backup_$(date +%Y%m%d_%H%M%S).sql',
         restore: 'psql -h $DB_HOST -U $DB_USER -d $DB_NAME < backup_file.sql',
         schedule: '0 2 * * *' // Daily at 2 AM
     },
     
-    // Environment variables for backup
+    // Environment variables for Supabase backup
     env: {
-        DB_HOST: 'your-db-host.render.com',
-        DB_USER: 'your-db-user',
-        DB_NAME: 'your-db-name',
+        DB_HOST: 'your-project.supabase.co',
+        DB_USER: 'postgres',
+        DB_NAME: 'postgres',
         DB_PASSWORD: 'your-db-password'
     }
 };
 
-// Backup script for Render
-const renderBackupScript = `
+// Backup script for Supabase
+const supabaseBackupScript = `
 #!/bin/bash
-# Database backup script for Render
+# Database backup script for Supabase
 
 # Set environment variables
 export PGPASSWORD=$DB_PASSWORD
@@ -62,6 +62,6 @@ const verifyBackup = (backupFile) => {
 
 module.exports = {
     backupConfig,
-    renderBackupScript,
+    supabaseBackupScript,
     verifyBackup
 }; 
