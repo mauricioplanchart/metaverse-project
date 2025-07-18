@@ -1,160 +1,167 @@
-import realtimeService from './realtimeService';
+import { supabase } from './supabase'
 
-// Socket.IO-like interface for easy migration
-export class MetaverseService {
-  private isConnected = false;
-  private eventListeners: Map<string, Set<Function>> = new Map();
+// Supabase-based metaverse service for real-time multiplayer features
+class MetaverseService {
+  private channel: any = null
+  private listeners: Map<string, ((...args: any[]) => void)[]> = new Map()
+  private isConnected = false
 
   constructor() {
-    this.setupEventHandlers();
+    console.log('🎮 MetaverseService initialized with Supabase')
   }
 
-  private setupEventHandlers() {
-    // Map Supabase events to Socket.IO-like events
-    realtimeService.onAvatarPositionUpdate((avatar) => {
-      this.emit('avatar-update', avatar);
-    });
-
-    realtimeService.onChatMessageReceived((message) => {
-      this.emit('chat-message', message);
-    });
-
-    realtimeService.onUserJoined((user) => {
-      this.emit('user-joined', user);
-    });
-
-    realtimeService.onUserLeft((user) => {
-      this.emit('user-left', user);
-    });
-
-    realtimeService.onWorldUpdate((world) => {
-      this.emit('world-update', world);
-    });
-
-    realtimeService.onTypingStart((userId, username) => {
-      this.emit('typing-start', { userId, username });
-    });
-
-    realtimeService.onTypingStop((userId) => {
-      this.emit('typing-stop', { userId });
-    });
-
-    realtimeService.onReaction((messageId, userId, reaction) => {
-      this.emit('message-reaction', { messageId, userId, reaction });
-    });
-  }
-
-  // Socket.IO-like connection methods
-  async connect(userId?: string, username?: string): Promise<void> {
+  // Connect to Supabase real-time
+  async connect(): Promise<boolean> {
     try {
-      await realtimeService.connect(userId, username);
-      this.isConnected = true;
-      this.emit('connect');
+      console.log('🔌 Connecting to Supabase real-time...')
+      
+      this.channel = supabase.channel('metaverse')
+        .on('presence', { event: 'sync' }, () => {
+          console.log('✅ Supabase presence sync')
+          this.emit('presenceSync')
+        })
+        .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+          console.log('👤 User joined:', key, newPresences)
+          this.emit('userJoined', { key, presences: newPresences })
+        })
+        .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+          console.log('👋 User left:', key, leftPresences)
+          this.emit('userLeft', { key, presences: leftPresences })
+        })
+        .on('broadcast', { event: 'avatar_update' }, (payload) => {
+          console.log('🎮 Avatar update received:', payload)
+          this.emit('avatarUpdate', payload)
+        })
+        .on('broadcast', { event: 'chat_message' }, (payload) => {
+          console.log('💬 Chat message received:', payload)
+          this.emit('chatMessage', payload)
+        })
+        .on('broadcast', { event: 'world_event' }, (payload) => {
+          console.log('🌍 World event received:', payload)
+          this.emit('worldEvent', payload)
+        })
+        .subscribe((status) => {
+          console.log('📡 Supabase subscription status:', status)
+          if (status === 'SUBSCRIBED') {
+            this.isConnected = true
+            this.emit('connected')
+          } else if (status === 'CHANNEL_ERROR') {
+            this.isConnected = false
+            this.emit('error', 'Supabase channel error')
+          }
+        })
+
+      return true
     } catch (error) {
-      this.isConnected = false;
-      this.emit('connect_error', error);
-      throw error;
+      console.error('❌ Failed to connect to Supabase:', error)
+      return false
     }
   }
 
+  // Disconnect from Supabase
   disconnect(): void {
-    realtimeService.disconnect();
-    this.isConnected = false;
-    this.emit('disconnect');
-  }
-
-  // Socket.IO-like event methods
-  on(event: string, callback: Function): void {
-    if (!this.eventListeners.has(event)) {
-      this.eventListeners.set(event, new Set());
+    if (this.channel) {
+      supabase.removeChannel(this.channel)
+      this.channel = null
     }
-    this.eventListeners.get(event)!.add(callback);
+    this.isConnected = false
+    this.emit('disconnected')
   }
 
-  off(event: string, callback?: Function): void {
+  // Send avatar update
+  sendAvatarUpdate(avatarData: any): void {
+    if (!this.isConnected || !this.channel) {
+      console.warn('⚠️ Not connected, cannot send avatar update')
+      return
+    }
+
+    this.channel.send({
+      type: 'broadcast',
+      event: 'avatar_update',
+      payload: avatarData
+    })
+  }
+
+  // Send chat message
+  sendChatMessage(message: string, username: string): void {
+    if (!this.isConnected || !this.channel) {
+      console.warn('⚠️ Not connected, cannot send chat message')
+      return
+    }
+
+    this.channel.send({
+      type: 'broadcast',
+      event: 'chat_message',
+      payload: { message, username, timestamp: Date.now() }
+    })
+  }
+
+  // Send world event
+  sendWorldEvent(eventType: string, data: any): void {
+    if (!this.isConnected || !this.channel) {
+      console.warn('⚠️ Not connected, cannot send world event')
+      return
+    }
+
+    this.channel.send({
+      type: 'broadcast',
+      event: 'world_event',
+      payload: { type: eventType, data, timestamp: Date.now() }
+    })
+  }
+
+  // Track user presence
+  trackPresence(userId: string, userData: any): void {
+    if (!this.isConnected || !this.channel) {
+      console.warn('⚠️ Not connected, cannot track presence')
+      return
+    }
+
+    this.channel.track({
+      user_id: userId,
+      ...userData
+    })
+  }
+
+  // Event listeners
+  on(event: string, callback: (...args: any[]) => void): void {
+    if (!this.listeners.has(event)) {
+      this.listeners.set(event, [])
+    }
+    this.listeners.get(event)!.push(callback)
+  }
+
+  off(event: string, callback?: (...args: any[]) => void): void {
+    if (!this.listeners.has(event)) return
+
     if (!callback) {
-      this.eventListeners.delete(event);
+      this.listeners.delete(event)
     } else {
-      this.eventListeners.get(event)?.delete(callback);
+      const callbacks = this.listeners.get(event)!
+      const index = callbacks.indexOf(callback)
+      if (index > -1) {
+        callbacks.splice(index, 1)
+      }
     }
   }
 
-  private emit(event: string, data?: any): void {
-    const listeners = this.eventListeners.get(event);
-    if (listeners) {
-      listeners.forEach(callback => {
+  private emit(event: string, ...args: any[]): void {
+    if (this.listeners.has(event)) {
+      this.listeners.get(event)!.forEach(callback => {
         try {
-          callback(data);
+          callback(...args)
         } catch (error) {
-          console.error(`Error in event listener for ${event}:`, error);
+          console.error('❌ Error in event listener:', error)
         }
-      });
+      })
     }
-  }
-
-  // World management
-  async joinWorld(worldId: string, username?: string): Promise<void> {
-    await realtimeService.joinWorld(worldId, username);
-    this.emit('world-joined', { worldId, username });
-  }
-
-  async leaveWorld(): Promise<void> {
-    await realtimeService.leaveWorld();
-    this.emit('world-left');
-  }
-
-  // Avatar methods
-  async updatePosition(position: { x: number; y: number; z: number }, rotation: { x: number; y: number; z: number }): Promise<void> {
-    await realtimeService.updateAvatarPosition(position, rotation);
-  }
-
-  // Chat methods
-  async sendMessage(message: string, type: 'text' | 'system' | 'whisper' | 'proximity' = 'text', targetUserId?: string): Promise<void> {
-    await realtimeService.sendMessage(message, type, targetUserId);
-  }
-
-  async startTyping(): Promise<void> {
-    await realtimeService.startTyping();
-  }
-
-  async stopTyping(): Promise<void> {
-    await realtimeService.stopTyping();
-  }
-
-  async reactToMessage(messageId: string, reaction: string): Promise<void> {
-    await realtimeService.reactToMessage(messageId, reaction);
-  }
-
-  // Interaction methods
-  async interact(objectId: string): Promise<void> {
-    // For now, just emit an event - you can implement actual interaction logic
-    this.emit('interaction', { objectId });
-  }
-
-  async teleport(teleporterId: string): Promise<void> {
-    // For now, just emit an event - you can implement actual teleport logic
-    this.emit('teleport', { teleporterId });
   }
 
   // Getters
   get connected(): boolean {
-    return this.isConnected && realtimeService.isConnectedState;
-  }
-
-  get id(): string | undefined {
-    return realtimeService.currentUser.userId || undefined;
-  }
-
-  get currentUser() {
-    return realtimeService.currentUser;
-  }
-
-  // Utility methods
-  removeAllListeners(): void {
-    this.eventListeners.clear();
+    return this.isConnected
   }
 }
 
-// Export singleton instance
-export const metaverseService = new MetaverseService();
-export default metaverseService; 
+// Create singleton instance
+export const metaverseService = new MetaverseService() 

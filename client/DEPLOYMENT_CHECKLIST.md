@@ -1,74 +1,77 @@
-# 🚀 Deployment Checklist
+# 🚀 Deployment Checklist - Supabase Metaverse
 
-## Pre-Deployment
-- [ ] Code is committed to GitHub
-- [ ] All tests pass locally
-- [ ] Builds work locally (`npm run build`)
-- [ ] Environment variables are ready
+## Pre-Deployment Setup
 
-## Backend Deployment (Render)
-- [ ] Create Render account
-- [ ] Connect GitHub repository
-- [ ] Create new Web Service
-- [ ] Configure build settings:
-  - [ ] Build Command: `cd server && npm install && npm run build`
-  - [ ] Start Command: `cd server && npm start`
-  - [ ] Environment: Node.js
-- [ ] Set environment variables:
-  - [ ] `NODE_ENV=production`
-  - [ ] `PORT=10000`
-  - [x] `CORS_ORIGIN=*` (No longer needed - Supabase handles CORS automatically)
-- [ ] Deploy and wait for success
-- [ ] Test health endpoint: `https://your-backend.onrender.com/health`
-- [ ] Note the backend URL for frontend configuration
+### Environment Variables
+- [ ] `VITE_SUPABASE_URL` is set correctly
+- [ ] `VITE_SUPABASE_ANON_KEY` is set correctly
+- [ ] `VITE_APP_NAME` is set to "Metaverse"
+- [ ] `VITE_APP_VERSION` is set to current version
+- [ ] `VITE_ENVIRONMENT` is set to "production"
 
-## Frontend Deployment (Netlify)
-- [ ] Create Netlify account
-- [ ] Connect GitHub repository
-- [ ] Create new site from Git
-- [ ] Configure build settings:
-  - [ ] Build Command: `npm run build`
-  - [ ] Publish Directory: `dist`
-- [ ] Set environment variables:
-  - [ ] `VITE_SERVER_URL=https://your-backend.onrender.com`
-  - [ ] `VITE_APP_NAME=Metaverse`
-  - [ ] `VITE_APP_VERSION=2.0.0`
-  - [ ] `NODE_ENV=production`
-  - [ ] `VITE_ENVIRONMENT=production`
-- [ ] Deploy and wait for success
-- [ ] Test the frontend application
+### Supabase Configuration
+- [ ] Supabase project is created and configured
+- [ ] Database tables are set up correctly
+- [ ] Row Level Security (RLS) policies are configured
+- [ ] Real-time subscriptions are enabled
+- [ ] CORS settings allow your domain
 
-## Post-Deployment Testing
-- [ ] Backend health check passes
-- [ ] Frontend loads without errors
-- [ ] Socket.IO connection works
-- [ ] 3D scene renders correctly
-- [ ] User interactions work
-- [ ] Chat functionality works
-- [ ] Avatar movement works
+### Frontend Build
+- [ ] All TypeScript errors are resolved
+- [ ] Build completes successfully: `npm run build`
+- [ ] No console errors in development mode
+- [ ] All components render correctly
+- [ ] Performance optimizations are in place
 
-## Monitoring Setup
-- [ ] Set up Render monitoring
-- [ ] Set up Netlify monitoring
-- [ ] Configure alerts for downtime
-- [ ] Test the deployment status checker
+## Deployment Steps
 
-## Optional Enhancements
-- [ ] Add custom domain
-- [ ] Set up SSL certificate
-- [ ] Configure CDN
-- [ ] Set up CI/CD pipeline
-- [ ] Add analytics
-- [ ] Set up error tracking
+### 1. Netlify Deployment
+- [ ] Connect GitHub repository to Netlify
+- [ ] Set build command: `npm run build`
+- [ ] Set publish directory: `dist`
+- [ ] Configure environment variables in Netlify dashboard
+- [ ] Deploy and verify build success
 
-## Documentation
-- [ ] Update README with deployment URLs
-- [ ] Document environment variables
-- [ ] Create troubleshooting guide
-- [ ] Set up support channels
+### 2. Post-Deployment Verification
+- [ ] Site loads without errors
+- [ ] Supabase connection works
+- [ ] Real-time features function correctly
+- [ ] Avatar movement and interactions work
+- [ ] Chat system is operational
+- [ ] Performance is acceptable
 
----
+### 3. Testing
+- [ ] Test on multiple browsers (Chrome, Firefox, Safari, Edge)
+- [ ] Test on mobile devices
+- [ ] Test real-time multiplayer features
+- [ ] Verify all interactive elements work
+- [ ] Check loading times and performance
 
-**Status**: ⏳ Ready to deploy
-**Last Updated**: $(date)
-**Next Action**: Start backend deployment on Render 
+## Monitoring
+
+### Performance
+- [ ] Lighthouse score is above 80
+- [ ] First Contentful Paint < 2s
+- [ ] Largest Contentful Paint < 4s
+- [ ] Cumulative Layout Shift < 0.1
+
+### Functionality
+- [ ] Real-time connections are stable
+- [ ] No memory leaks detected
+- [ ] Error handling works correctly
+- [ ] Fallback modes function properly
+
+## Troubleshooting
+
+### Common Issues
+- [ ] CORS errors resolved
+- [ ] Environment variables properly set
+- [ ] Supabase connection issues resolved
+- [ ] Build errors fixed
+- [ ] Performance issues addressed
+
+### Support Resources
+- [ ] Supabase documentation reviewed
+- [ ] Netlify documentation reviewed
+- [ ] Error logs monitored
+- [ ] User feedback collected 
