@@ -169,8 +169,11 @@ const BabylonSceneMultiplayer: React.FC = () => {
       }, scene);
       box.position.y = 0.5;
 
-      // 🎨 Creating expanded 3D world...
-      console.log('🎨 Creating expanded 3D world...');
+      // 🎨 Creating enhanced 3D world with interactive zones...
+      console.log('🎨 Creating enhanced 3D world with interactive zones...');
+      
+      // Interactive zones are now handled by the EnhancedWorld component
+      console.log('🌍 Interactive zones will be created by EnhancedWorld component');
       
       // Create central plaza with fountain
       const fountainBase = BABYLON.MeshBuilder.CreateCylinder('fountainBase', { height: 0.3, diameter: 2 }, scene);
