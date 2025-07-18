@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import { config } from './config'
+// import { config } from './config' // Removed unused import
 
 type ConnectionType = 'supabase' | 'websocket'
 

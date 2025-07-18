@@ -5,6 +5,9 @@ class MetaverseService {
   private channel: any = null
   private listeners: Map<string, ((...args: any[]) => void)[]> = new Map()
   private isConnected = false
+  private currentUserId: string | null = null
+  private currentUsername: string | null = null
+  // private currentWorld: string | null = null // Unused for now
 
   constructor() {
     console.log('🎮 MetaverseService initialized with Supabase')
@@ -68,6 +71,114 @@ class MetaverseService {
     this.emit('disconnected')
   }
 
+  // Join a world
+  async joinWorld(worldId: string, username: string): Promise<boolean> {
+    try {
+      // this.currentWorld = worldId // Unused for now
+      this.currentUsername = username
+      this.currentUserId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      
+      // Track presence in the world
+      this.trackPresence(this.currentUserId, {
+        username,
+        world: worldId,
+        joined_at: new Date().toISOString()
+      })
+
+      this.emit('worldJoined', { worldId, username })
+      return true
+    } catch (error) {
+      console.error('❌ Failed to join world:', error)
+      return false
+    }
+  }
+
+  // Update avatar position
+  updatePosition(position: any, rotation?: any): void {
+    if (!this.isConnected || !this.channel) {
+      console.warn('⚠️ Not connected, cannot update position')
+      return
+    }
+
+    this.sendAvatarUpdate({
+      userId: this.currentUserId,
+      username: this.currentUsername,
+      position,
+      rotation,
+      timestamp: Date.now()
+    })
+  }
+
+  // Send chat message
+  sendMessage(message: string, _type: string = 'global'): void {
+    if (!this.isConnected || !this.channel) {
+      console.warn('⚠️ Not connected, cannot send message')
+      return
+    }
+
+    this.sendChatMessage(message, this.currentUsername || 'Anonymous')
+  }
+
+  // Start typing indicator
+  startTyping(): void {
+    if (!this.isConnected || !this.channel) return
+
+    this.channel.send({
+      type: 'broadcast',
+      event: 'typing_start',
+      payload: { userId: this.currentUserId, username: this.currentUsername }
+    })
+  }
+
+  // Stop typing indicator
+  stopTyping(): void {
+    if (!this.isConnected || !this.channel) return
+
+    this.channel.send({
+      type: 'broadcast',
+      event: 'typing_stop',
+      payload: { userId: this.currentUserId, username: this.currentUsername }
+    })
+  }
+
+  // React to a message
+  reactToMessage(messageId: string, reaction: string): void {
+    if (!this.isConnected || !this.channel) return
+
+    this.channel.send({
+      type: 'broadcast',
+      event: 'message_reaction',
+      payload: { messageId, reaction, userId: this.currentUserId, username: this.currentUsername }
+    })
+  }
+
+  // Interact with objects
+  interact(interactionId: string): void {
+    if (!this.isConnected || !this.channel) return
+
+    this.channel.send({
+      type: 'broadcast',
+      event: 'interaction',
+      payload: { interactionId, userId: this.currentUserId, username: this.currentUsername }
+    })
+  }
+
+  // Teleport to location
+  teleport(teleporterId: string): void {
+    if (!this.isConnected || !this.channel) return
+
+    this.channel.send({
+      type: 'broadcast',
+      event: 'teleport',
+      payload: { teleporterId, userId: this.currentUserId, username: this.currentUsername }
+    })
+  }
+
+  // Remove all event listeners
+  removeAllListeners(): void {
+    this.listeners.clear()
+  }
+
   // Send avatar update
   sendAvatarUpdate(avatarData: any): void {
     if (!this.isConnected || !this.channel) {
@@ -82,8 +193,8 @@ class MetaverseService {
     })
   }
 
-  // Send chat message
-  sendChatMessage(message: string, username: string): void {
+  // Send chat message (internal method)
+  private sendChatMessage(message: string, username: string): void {
     if (!this.isConnected || !this.channel) {
       console.warn('⚠️ Not connected, cannot send chat message')
       return
@@ -160,6 +271,18 @@ class MetaverseService {
   // Getters
   get connected(): boolean {
     return this.isConnected
+  }
+
+  get id(): string | null {
+    return this.currentUserId
+  }
+
+  get currentUser(): { username: string | null; userId: string | null } | null {
+    if (!this.currentUserId || !this.currentUsername) return null
+    return {
+      username: this.currentUsername,
+      userId: this.currentUserId
+    }
   }
 }
 

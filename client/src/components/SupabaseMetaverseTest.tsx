@@ -37,7 +37,7 @@ const SupabaseMetaverseTest: React.FC = () => {
 
       // Test 2: Connection
       results.push('🔌 Testing connection...');
-      await metaverseService.connect('test-user', 'TestPlayer');
+      await metaverseService.connect();
       results.push('✅ Connected to Supabase Realtime');
 
       // Test 3: Join world
