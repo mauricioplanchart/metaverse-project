@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useMetaverseStore } from '../stores/useMetaverseStore';
 import { metaverseService } from '../lib/metaverseService';
-import Avatar3D from './Avatar3D';
+import EnhancedAvatar3D from './EnhancedAvatar3D';
 import ProximityChat from './ProximityChat';
-import AvatarMovement from './AvatarMovement';
-import AvatarInteractions from './AvatarInteractions';
+import EnhancedAvatarMovement from './EnhancedAvatarMovement';
+import EnhancedAvatarInteractions from './EnhancedAvatarInteractions';
 import EnhancedWorld from './EnhancedWorld';
 import MiniGames from './MiniGames';
 import WorldInteractions from './WorldInteractions';
@@ -12,7 +12,7 @@ import WorldInteractions from './WorldInteractions';
 // Import Babylon.js
 import * as BABYLON from '@babylonjs/core';
 
-console.log('🎮 AvatarMovement import test:', typeof AvatarMovement);
+  console.log('🎮 EnhancedAvatarMovement import test:', typeof EnhancedAvatarMovement);
 
 const BabylonSceneMultiplayer: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -705,13 +705,17 @@ const BabylonSceneMultiplayer: React.FC = () => {
       
               {/* Render Real User Avatars */}
         {sceneRef.current && userAvatars.map((avatar: any) => (
-          <Avatar3D
+          <EnhancedAvatar3D
             key={`avatar-${avatar.userId}`}
             scene={sceneRef.current!}
             position={avatar.position}
             username={avatar.username}
             avatarData={avatar.avatarData}
             isCurrentUser={avatar.isCurrentUser}
+            onAvatarClick={(username) => {
+              console.log('🎭 Avatar clicked:', username);
+              // Handle avatar click - could open profile, start interaction, etc.
+            }}
           />
         ))}
         
@@ -723,12 +727,30 @@ const BabylonSceneMultiplayer: React.FC = () => {
           />
         )}
         
-        {/* Avatar Interactions */}
+        {/* Enhanced Avatar Interactions */}
         {sceneRef.current && (
-          <AvatarInteractions
-            scene={sceneRef.current}
-            currentUserAvatar={userAvatars.find(avatar => avatar.isCurrentUser)}
-            nearbyAvatars={userAvatars.filter(avatar => !avatar.isCurrentUser)}
+          <EnhancedAvatarInteractions
+            onGesture={(gesture) => {
+              console.log('🎭 Gesture performed:', gesture);
+              // Trigger animation on current user avatar
+              const currentAvatar = userAvatars.find(avatar => avatar.isCurrentUser);
+              if (currentAvatar?.playAnimation) {
+                currentAvatar.playAnimation(gesture);
+              }
+            }}
+            onExpression={(expression) => {
+              console.log('😊 Expression performed:', expression);
+              // Update avatar expression
+              const currentAvatar = userAvatars.find(avatar => avatar.isCurrentUser);
+              if (currentAvatar?.setExpression) {
+                currentAvatar.setExpression(expression);
+              }
+            }}
+            onSocialAction={(action, targetUser) => {
+              console.log('🤝 Social action performed:', action, 'on', targetUser);
+              // Handle social interactions
+              metaverseService.interact('social-action');
+            }}
           />
         )}
 
@@ -862,10 +884,11 @@ const BabylonSceneMultiplayer: React.FC = () => {
                 �� Movement Test Area - If you see this, AvatarMovement should render below
               </div>
               
-              <AvatarMovement
+              <EnhancedAvatarMovement
                 scene={sceneRef.current || undefined}
                 camera={camera || undefined}
                 currentUserAvatar={userAvatars.find(avatar => avatar.isCurrentUser)}
+                avatarMesh={userAvatars.find(avatar => avatar.isCurrentUser)}
               />
             </div>
           );
