@@ -22,11 +22,14 @@ const EnhancedWorld: React.FC<EnhancedWorldProps> = ({
   const [currentTime, setCurrentTime] = useState(0); // 0-24 hour cycle
   const [weather, setWeather] = useState<'sunny' | 'rainy' | 'cloudy' | 'night'>('sunny');
   const [activeZone, setActiveZone] = useState<string | null>(null);
+  const [isSafari] = useState(() => /^((?!chrome|android).)*safari/i.test(navigator.userAgent));
   
   const zonesRef = useRef<WorldZone[]>([]);
   const weatherSystemRef = useRef<BABYLON.ParticleSystem | null>(null);
   const sunRef = useRef<BABYLON.DirectionalLight | null>(null);
   const moonRef = useRef<BABYLON.Mesh | null>(null);
+
+  console.log('🌍 EnhancedWorld component initialized', { isSafari });
 
   // Define interactive zones
   const createZones = () => {
@@ -80,20 +83,29 @@ const EnhancedWorld: React.FC<EnhancedWorldProps> = ({
   // Create zone visual indicators
   const createZoneIndicators = (zones: WorldZone[]) => {
     zones.forEach(zone => {
-      // Create zone boundary
-      const zoneBoundary = BABYLON.MeshBuilder.CreateCylinder(
-        `${zone.name}Boundary`,
-        { height: 0.1, diameter: zone.radius * 2 },
-        scene
-      );
-      zoneBoundary.position = zone.position;
-      zoneBoundary.position.y = 0.05;
-      
-      const boundaryMaterial = new BABYLON.StandardMaterial(`${zone.name}BoundaryMat`, scene);
-      boundaryMaterial.diffuseColor = zone.color;
-      boundaryMaterial.alpha = 0.3;
-      boundaryMaterial.emissiveColor = zone.color.scale(0.2);
-      zoneBoundary.material = boundaryMaterial;
+      try {
+        // Create zone boundary
+        const zoneBoundary = BABYLON.MeshBuilder.CreateCylinder(
+          `${zone.name}Boundary`,
+          { height: 0.1, diameter: zone.radius * 2 },
+          scene
+        );
+        zoneBoundary.position = zone.position;
+        zoneBoundary.position.y = 0.05;
+        
+        // Safari-specific material optimizations
+        const boundaryMaterial = new BABYLON.StandardMaterial(`${zone.name}BoundaryMat`, scene);
+        boundaryMaterial.diffuseColor = zone.color;
+        boundaryMaterial.alpha = isSafari ? 0.5 : 0.3; // Higher alpha for Safari visibility
+        boundaryMaterial.emissiveColor = zone.color.scale(0.2);
+        
+        // Safari-specific rendering optimizations
+        if (isSafari) {
+          boundaryMaterial.backFaceCulling = false;
+          boundaryMaterial.useParallax = false;
+        }
+        
+                zoneBoundary.material = boundaryMaterial;
 
       // Create zone label
       const zoneLabel = BABYLON.MeshBuilder.CreatePlane(
@@ -126,6 +138,12 @@ const EnhancedWorld: React.FC<EnhancedWorldProps> = ({
 
       zoneBoundary.animations = [pulseAnimation];
       scene.beginAnimation(zoneBoundary, 0, 30, true, 0.5);
+      } catch (error) {
+        console.error(`❌ Error creating zone indicator for ${zone.name}:`, error);
+        if (isSafari) {
+          console.log('🍎 Safari-specific error - trying fallback rendering');
+        }
+      }
     });
   };
 

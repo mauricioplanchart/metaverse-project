@@ -58,6 +58,14 @@ const BabylonSceneMultiplayer: React.FC = () => {
       return;
     }
 
+    // Safari-specific WebGL checks
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    console.log('🌐 Browser detection:', { isSafari, userAgent: navigator.userAgent });
+    
+    if (isSafari) {
+      console.log('🍎 Safari detected - applying Safari-specific optimizations');
+    }
+
     // Prevent multiple initializations
     if (engineRef.current && sceneRef.current) {
       console.log('🎮 Scene already initialized, skipping...');
@@ -80,9 +88,22 @@ const BabylonSceneMultiplayer: React.FC = () => {
     console.log('🎮 Starting simplified multiplayer Babylon scene...');
 
     try {
-      // Create engine
-      const engine = new BABYLON.Engine(canvasRef.current, true);
+      // Create engine with Safari-specific options
+      const engineOptions = {
+        preserveDrawingBuffer: true,
+        stencil: true,
+        disableWebGL2Support: isSafari, // Safari sometimes has issues with WebGL2
+        powerPreference: "high-performance" as WebGLPowerPreference
+      };
+      
+      const engine = new BABYLON.Engine(canvasRef.current, true, engineOptions);
       engineRef.current = engine;
+      
+      // Safari-specific engine optimizations
+      if (isSafari) {
+        engine.setHardwareScalingLevel(1); // Disable hardware scaling on Safari
+        console.log('🍎 Applied Safari-specific engine optimizations');
+      }
 
       // Create scene
       const scene = new BABYLON.Scene(engine);
@@ -718,6 +739,34 @@ const BabylonSceneMultiplayer: React.FC = () => {
             onZoneEnter={handleZoneEnter}
           />
         )}
+        
+        {/* Safari-specific fallback message */}
+        {(() => {
+          const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+          if (isSafari && !sceneRef.current) {
+            return (
+              <div style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                color: 'white',
+                padding: '20px',
+                borderRadius: '10px',
+                textAlign: 'center',
+                zIndex: 1000
+              }}>
+                <div>🍎 Safari detected</div>
+                <div>Loading enhanced world features...</div>
+                <div style={{ fontSize: '12px', marginTop: '10px' }}>
+                  If you don't see the expanded world, try refreshing the page
+                </div>
+              </div>
+            );
+          }
+          return null;
+        })()}
 
         {/* World Interactions */}
         {sceneRef.current && (
