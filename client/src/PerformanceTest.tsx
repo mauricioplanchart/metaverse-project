@@ -39,7 +39,6 @@ const PerformanceTest: React.FC = () => {
       <LoadingScreen
         progress={loadingProgress}
         message="Testing performance components..."
-        isVisible={loadingProgress < 100}
       />
 
       {/* Test Controls */}

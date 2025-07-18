@@ -18,7 +18,7 @@ const AppOptimized: React.FC = () => {
   const [showCustomizer, setShowCustomizer] = useState(false)
   const [isInitialized, setIsInitialized] = useState(false)
   const [forceProceed, setForceProceed] = useState(false)
-  const [connectionStep, setConnectionStep] = useState('initializing')
+  // const [connectionStep] = useState('initializing')
   const [loadingProgress, setLoadingProgress] = useState(0)
   const [loadingMessage, setLoadingMessage] = useState('Initializing...')
   const [showPerformanceMonitor, setShowPerformanceMonitor] = useState(false)
@@ -160,7 +160,7 @@ const AppOptimized: React.FC = () => {
         console.log('🚀 Starting connection attempt...');
         isConnecting = true;
         setIsInitialized(true);
-        setConnectionStep('connecting');
+        // setConnectionStep('connecting');
         setLoadingProgress(20)
         setLoadingMessage('Connecting to server...')
         
@@ -180,7 +180,7 @@ const AppOptimized: React.FC = () => {
         
         // Also connect to metaverse service for compatibility
         await metaverseService.connect()
-        setConnectionStep('socket-connected');
+        // setConnectionStep('socket-connected');
         setLoadingProgress(60)
         setLoadingMessage('Setting up connection...')
         setupMetaverseListeners()
@@ -190,7 +190,7 @@ const AppOptimized: React.FC = () => {
           console.log('🔧 Metaverse service is connected, forcing state update')
           setConnected(true)
           setConnectionError(null)
-          setConnectionStep('joining-world');
+          // setConnectionStep('joining-world');
           setLoadingProgress(90)
           setLoadingMessage('Joining virtual world...')
         } else {
@@ -201,7 +201,7 @@ const AppOptimized: React.FC = () => {
               console.log('🔧 Metaverse connected after delay, updating state')
               setConnected(true)
               setConnectionError(null)
-              setConnectionStep('joining-world');
+              // setConnectionStep('joining-world');
               setLoadingProgress(90)
               setLoadingMessage('Joining virtual world...')
             }
@@ -279,17 +279,6 @@ const AppOptimized: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [isInitialized, isConnected]);
-
-  // Handle loading progress updates
-  const handleLoadingProgress = (progress: number, message: string) => {
-    setLoadingProgress(progress);
-    setLoadingMessage(message);
-  };
-
-  // Handle loading errors
-  const handleLoadingError = (error: string) => {
-    setConnectionError(error);
-  };
 
   // Handle retry connection
   const handleRetry = () => {

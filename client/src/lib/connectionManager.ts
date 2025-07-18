@@ -84,11 +84,11 @@ class ConnectionManager {
           .on('presence', { event: 'sync' }, () => {
             console.log('✅ Supabase presence sync')
           })
-          .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+          .on('presence', { event: 'join' }, ({ newPresences }) => {
             console.log('👤 User joined:', newPresences)
             this.emit('userJoined', newPresences)
           })
-          .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+          .on('presence', { event: 'leave' }, ({ leftPresences }) => {
             console.log('👋 User left:', leftPresences)
             this.emit('userLeft', leftPresences)
           })

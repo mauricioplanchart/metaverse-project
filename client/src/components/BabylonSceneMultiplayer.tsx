@@ -32,7 +32,7 @@ const BabylonSceneMultiplayer: React.FC = () => {
   const [camera, setCamera] = useState<BABYLON.Camera | null>(null);
   const [activeZone, setActiveZone] = useState<string | null>(null);
   const [currentGame, setCurrentGame] = useState<'target' | 'obstacle' | 'collection' | null>(null);
-  const [gameScore, setGameScore] = useState(0);
+  // const [gameScore, setGameScore] = useState(0);
   const [showGameMenu, setShowGameMenu] = useState(false);
 
   // Debug logging
@@ -609,7 +609,7 @@ const BabylonSceneMultiplayer: React.FC = () => {
   };
 
   const handleGameComplete = (score: number, gameType: string) => {
-    setGameScore(score);
+    // setGameScore(score); // This line is removed
     setCurrentGame(null);
     console.log(`🎮 Game completed: ${gameType} with score ${score}`);
   };

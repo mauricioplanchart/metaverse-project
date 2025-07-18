@@ -4,7 +4,6 @@ import * as BABYLON from '@babylonjs/core';
 interface EnhancedWorldProps {
   scene: BABYLON.Scene;
   onZoneEnter?: (zoneName: string) => void;
-  onGameStart?: (gameType: 'target' | 'obstacle' | 'collection') => void;
 }
 
 interface WorldZone {
@@ -18,13 +17,11 @@ interface WorldZone {
 
 const EnhancedWorld: React.FC<EnhancedWorldProps> = ({ 
   scene, 
-  onZoneEnter, 
-  onGameStart 
+  onZoneEnter 
 }) => {
   const [currentTime, setCurrentTime] = useState(0); // 0-24 hour cycle
   const [weather, setWeather] = useState<'sunny' | 'rainy' | 'cloudy' | 'night'>('sunny');
   const [activeZone, setActiveZone] = useState<string | null>(null);
-  const [gameActive, setGameActive] = useState(false);
   
   const zonesRef = useRef<WorldZone[]>([]);
   const weatherSystemRef = useRef<BABYLON.ParticleSystem | null>(null);

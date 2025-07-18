@@ -127,7 +127,7 @@ export class LODSystem {
 
     const cameraPosition = this.camera.position;
 
-    this.lodObjects.forEach((lodObject, name) => {
+    this.lodObjects.forEach((lodObject) => {
       const distance = BABYLON.Vector3.Distance(cameraPosition, lodObject.position);
       
       // Find appropriate LOD level

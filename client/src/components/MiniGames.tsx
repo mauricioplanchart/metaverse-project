@@ -29,7 +29,6 @@ const MiniGames: React.FC<MiniGamesProps> = ({
   
   const gameAreaRef = useRef<BABYLON.Mesh | null>(null);
   const playerRef = useRef<BABYLON.Mesh | null>(null);
-  const rayRef = useRef<BABYLON.Ray | null>(null);
 
   // Target Shooting Game
   const createTargetGame = () => {
