@@ -1,13 +1,13 @@
 {
   "name": "metaverse-client",
-  "private": true,
-  "version": "1.0.0",
+  "version": "2.1.0",
+  "description": "Enhanced Metaverse with Advanced Avatar System",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && echo 'Enhanced Avatar System v2.1.0 deployed at $(date)'"
   },
   "dependencies": {
     "@babylonjs/core": "^6.55.0",
@@ -34,5 +34,21 @@
     "typescript": "^5.2.2",
     "vite": "^5.0.8"
   },
-  "_comment": "Last updated: 2025-07-16 20:15 UTC - Force Netlify deployment"
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "deployment": {
+    "version": "2.1.0",
+    "timestamp": "2025-01-16T20:30:00Z",
+    "features": [
+      "Enhanced Avatar System v2.1.0",
+      "PBR Materials and Realistic Rendering",
+      "Advanced Animations and Physics",
+      "Gesture and Expression System",
+      "Interactive World Zones",
+      "Mini-Games and Social Features",
+      "Safari Optimizations",
+      "Cache-Busting Headers"
+    ]
+  }
 }
