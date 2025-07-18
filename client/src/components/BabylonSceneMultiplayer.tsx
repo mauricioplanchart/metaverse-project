@@ -713,7 +713,6 @@ const BabylonSceneMultiplayer: React.FC = () => {
           <EnhancedWorld
             scene={sceneRef.current}
             onZoneEnter={handleZoneEnter}
-            onGameStart={handleGameStart}
           />
         )}
 

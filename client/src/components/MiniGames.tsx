@@ -91,7 +91,7 @@ const MiniGames: React.FC<MiniGamesProps> = ({
     playerRef.current = player;
 
     // Set up click detection
-    scene.onPointerDown = (evt) => {
+    scene.onPointerDown = () => {
       if (!gameActive) return;
       
       const pickResult = scene.pick(scene.pointerX, scene.pointerY);
