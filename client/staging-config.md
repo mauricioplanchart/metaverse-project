@@ -18,11 +18,10 @@
    - **Branch:** `staging` (not main!)
 5. Deploy!
 
-### Option 2: Vercel
-1. Go to [vercel.com](https://vercel.com)
-2. Import your GitHub repository
-3. Set branch to `staging`
-4. Deploy!
+### Option 2: Alternative Platforms
+If you need to switch from Netlify, consider:
+- **Vercel**: Similar to Netlify, good for React apps
+- **Render**: Good for static sites
 
 ## 🔄 Workflow
 
@@ -74,7 +73,7 @@ Feature → Staging Site → Test → Main Site → Users see working features! 
 - **Local:** `http://localhost:5173`
 
 ## 🎯 Next Steps
-1. Deploy staging site to Netlify/Vercel
+1. Deploy staging site to Netlify
 2. Test your current features on staging
 3. Use staging for all new development
 4. Only merge to main when staging is perfect

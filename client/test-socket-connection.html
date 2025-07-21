@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Connection Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 300px;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔌 Socket.IO Connection Test</h1>
+        
+        <div class="status info" id="status">
+            Ready to test Socket.IO connection
+        </div>
+        
+        <div>
+            <label for="serverUrl">Server URL:</label>
+            <input type="text" id="serverUrl" placeholder="https://your-app.onrender.com" value="https://metaverse-project-2.onrender.com">
+            <button onclick="testConnection()">Test Connection</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <div>
+            <button onclick="connect()">Connect</button>
+            <button onclick="disconnect()">Disconnect</button>
+            <button onclick="sendTestMessage()">Send Test Message</button>
+        </div>
+        
+        <h3>Connection Log:</h3>
+        <div class="log" id="log"></div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script>
+        let socket = null;
+        const log = document.getElementById('log');
+        const status = document.getElementById('status');
+        
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            log.innerHTML += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function updateStatus(message, type = 'info') {
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+        
+        function clearLog() {
+            log.innerHTML = '';
+        }
+        
+        async function testConnection() {
+            const serverUrl = document.getElementById('serverUrl').value;
+            if (!serverUrl) {
+                updateStatus('Please enter a server URL', 'error');
+                return;
+            }
+            
+            updateStatus('Testing connection...', 'info');
+            addLog(`Testing connection to: ${serverUrl}`);
+            
+            try {
+                const response = await fetch(`${serverUrl}/health`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    updateStatus('✅ Server is reachable!', 'success');
+                    addLog('✅ Health check passed');
+                } else {
+                    updateStatus('❌ Server responded with error', 'error');
+                    addLog(`❌ Health check failed: ${response.status}`);
+                }
+            } catch (error) {
+                updateStatus('❌ Cannot reach server', 'error');
+                addLog(`❌ Connection error: ${error.message}`);
+            }
+        }
+        
+        function connect() {
+            const serverUrl = document.getElementById('serverUrl').value;
+            if (!serverUrl) {
+                updateStatus('Please enter a server URL', 'error');
+                return;
+            }
+            
+            if (socket?.connected) {
+                addLog('Already connected');
+                return;
+            }
+            
+            updateStatus('Connecting...', 'info');
+            addLog(`Connecting to: ${serverUrl}`);
+            
+            try {
+                socket = io(serverUrl, {
+                    transports: ['websocket', 'polling'],
+                    reconnection: true,
+                    reconnectionAttempts: 5,
+                    reconnectionDelay: 1000,
+                    timeout: 20000,
+                });
+                
+                socket.on('connect', () => {
+                    updateStatus('✅ Connected to Socket.IO server!', 'success');
+                    addLog('✅ Socket.IO connected successfully');
+                });
+                
+                socket.on('connect_error', (error) => {
+                    updateStatus('❌ Connection failed', 'error');
+                    addLog(`❌ Connection error: ${error.message}`);
+                });
+                
+                socket.on('disconnect', (reason) => {
+                    updateStatus('🔌 Disconnected', 'info');
+                    addLog(`🔌 Disconnected: ${reason}`);
+                });
+                
+                socket.on('reconnect', (attemptNumber) => {
+                    updateStatus('🔄 Reconnected', 'success');
+                    addLog(`🔄 Reconnected after ${attemptNumber} attempts`);
+                });
+                
+                socket.on('reconnect_error', (error) => {
+                    addLog(`❌ Reconnection error: ${error.message}`);
+                });
+                
+                socket.on('reconnect_failed', () => {
+                    updateStatus('❌ Reconnection failed', 'error');
+                    addLog('❌ Reconnection failed');
+                });
+                
+                // Listen for custom events
+                socket.on('user-joined', (data) => {
+                    addLog(`👤 User joined: ${JSON.stringify(data)}`);
+                });
+                
+                socket.on('avatar-update', (data) => {
+                    addLog(`🎯 Avatar update: ${JSON.stringify(data)}`);
+                });
+                
+                socket.on('chat-message', (data) => {
+                    addLog(`💬 Chat message: ${JSON.stringify(data)}`);
+                });
+                
+            } catch (error) {
+                updateStatus('❌ Failed to create socket', 'error');
+                addLog(`❌ Socket creation error: ${error.message}`);
+            }
+        }
+        
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+                updateStatus('Disconnected', 'info');
+                addLog('🔌 Manually disconnected');
+            }
+        }
+        
+        function sendTestMessage() {
+            if (!socket?.connected) {
+                addLog('❌ Not connected - cannot send message');
+                return;
+            }
+            
+            const testMessage = {
+                message: 'Hello from test client!',
+                timestamp: Date.now()
+            };
+            
+            socket.emit('test-message', testMessage);
+            addLog(`📤 Sent test message: ${JSON.stringify(testMessage)}`);
+        }
+        
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            addLog('🚀 Socket.IO Connection Test loaded');
+            addLog('Enter your Render server URL and click "Test Connection"');
+        });
+    </script>
+</body>
+</html> 

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { metaverseService } from '../lib/metaverseService';
-import { validateConfig } from '../lib/config';
+import { config } from '../lib/config';
 
 interface TestMessage {
   id: string;
@@ -29,7 +29,8 @@ const SupabaseMigrationTest: React.FC = () => {
     try {
       // Test 1: Configuration validation
       results.push('🔧 Testing configuration...');
-      if (!validateConfig()) {
+      const hasSupabaseConfig = !!config.supabase.url && !!config.supabase.anonKey;
+      if (!hasSupabaseConfig) {
         results.push('❌ Configuration validation failed');
         return;
       }

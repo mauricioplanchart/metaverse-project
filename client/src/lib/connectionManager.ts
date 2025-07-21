@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 
 // Supabase-only connection manager
-// VERSION: 2.1.0 - Completely removed Socket.IO
+// VERSION: 2.1.0 - Supabase Only
 class ConnectionManager {
   private isConnected = false
   private currentUserId: string | null = null
@@ -11,13 +11,13 @@ class ConnectionManager {
 
   constructor() {
     console.log('🔌 ConnectionManager v2.1.0 initialized - Supabase Only')
-    console.log('🚫 Socket.IO completely removed from connection manager')
+    console.log('✅ Supabase connection manager initialized')
   }
 
   async connect(): Promise<boolean> {
     try {
       console.log('🔌 Connecting to Supabase real-time only...')
-      console.log('🚫 Socket.IO connections are completely disabled')
+      console.log('✅ Supabase connections enabled')
       
       if (!supabase) {
         console.error('❌ Supabase client not available')

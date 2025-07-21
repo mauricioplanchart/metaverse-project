@@ -1,0 +1,11 @@
+# Render Deployment Configuration
+# Copy these to your Render environment variables:
+
+VITE_SERVER_URL=https://your-app.onrender.com
+VITE_APP_NAME=Metaverse
+VITE_APP_VERSION=2.0.0
+VITE_ENVIRONMENT=production
+VITE_DEBUG_MODE=false
+VITE_OFFLINE_MODE=false
+VITE_ENABLE_SOCKET_IO=true
+VITE_ENABLE_SUPABASE=false 

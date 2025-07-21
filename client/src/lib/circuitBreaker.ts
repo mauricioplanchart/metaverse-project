@@ -70,13 +70,13 @@ class CircuitBreaker {
 }
 
 // Global circuit breakers for different services
-export const socketCircuitBreaker = new CircuitBreaker();
+export const supabaseCircuitBreaker = new CircuitBreaker();
 export const apiCircuitBreaker = new CircuitBreaker();
 
 // Usage example:
 // try {
-//     const result = await socketCircuitBreaker.execute(() => 
-//         socketService.connect()
+//     const result = await supabaseCircuitBreaker.execute(() => 
+//         supabaseService.connect()
 //     );
 // } catch (error) {
 //     // Use fallback or cached data

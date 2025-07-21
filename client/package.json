@@ -1,41 +1,39 @@
 {
   "name": "metaverse-client",
-  "version": "2.1.0",
-  "description": "Enhanced Metaverse with Advanced Avatar System - Supabase Only",
+  "version": "1.0.0",
+  "description": "Metaverse project with client and server",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && echo 'Enhanced Avatar System v2.1.0 deployed at $(date)'"
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
   },
   "dependencies": {
-    "@babylonjs/core": "^6.49.0",
-    "@supabase/supabase-js": "^2.39.0",
+    "@babylonjs/core": "^6.33.1",
+    "@babylonjs/gui": "^6.33.1",
+    "@babylonjs/loaders": "^6.33.1",
+    "@babylonjs/materials": "^6.33.1",
+    "cannon": "^0.6.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "socket.io-client": "^4.8.1",
     "zustand": "^4.4.7"
   },
   "devDependencies": {
-    "@types/react": "^18.2.43",
-    "@types/react-dom": "^18.2.17",
-    "@vitejs/plugin-react": "^4.2.1",
-    "autoprefixer": "^10.4.16",
-    "postcss": "^8.4.32",
-    "tailwindcss": "^3.3.6",
+    "@tailwindcss/postcss": "^4.1.11",
+    "@types/node": "^24.0.13",
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@vitejs/plugin-react": "^4.1.1",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.11",
     "typescript": "^5.2.2",
-    "vite": "^5.0.8"
+    "vite": "^5.0.0"
   },
-  "keywords": [
-    "metaverse",
-    "babylonjs",
-    "supabase",
-    "react",
-    "typescript",
-    "3d",
-    "avatar",
-    "multiplayer"
-  ],
-  "author": "Metaverse Project",
-  "license": "MIT"
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

@@ -1,55 +1,83 @@
-// Configuration for Supabase-based metaverse
+// Environment configuration
 export const config = {
-  // App settings
-  appName: import.meta.env.VITE_APP_NAME || 'Metaverse',
-  appVersion: import.meta.env.VITE_APP_VERSION || '2.0.0',
+  // Supabase configuration
+  supabase: {
+    url: import.meta.env.VITE_SUPABASE_URL || '',
+    anonKey: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+  },
   
-  // Development settings
-  isDevelopment: import.meta.env.DEV,
-  isProduction: import.meta.env.PROD,
+  // Socket.IO server configuration
+  server: {
+    url: import.meta.env.VITE_SERVER_URL || 'https://metaverse-project-2.onrender.com',
+  },
   
-  // Supabase settings
-  supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
-  supabaseAnonKey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+  // App configuration
+  app: {
+    name: import.meta.env.VITE_APP_NAME || 'Metaverse',
+    version: import.meta.env.VITE_APP_VERSION || '2.0.0',
+    environment: import.meta.env.VITE_ENVIRONMENT || 'development',
+  },
   
-  // World settings
-  defaultWorldId: 'main-world',
-  maxPlayersPerWorld: 100,
+  // Feature flags
+  features: {
+    debugMode: import.meta.env.VITE_DEBUG_MODE === 'true',
+    offlineMode: import.meta.env.VITE_OFFLINE_MODE === 'true',
+    enableSocketIO: import.meta.env.VITE_ENABLE_SOCKET_IO !== 'false',
+    enableSupabase: import.meta.env.VITE_ENABLE_SUPABASE !== 'false',
+  },
   
-  // Performance settings
-  avatarUpdateInterval: 100, // ms
-  chatMessageRetention: 24 * 60 * 60 * 1000, // 24 hours in ms
+  // Connection settings
+  connection: {
+    timeout: 10000,
+    retryAttempts: 5,
+    retryDelay: 1000,
+  },
 };
 
-// Helper function to get environment info
-export const getEnvironmentInfo = () => {
-  return {
-    appName: config.appName,
-    appVersion: config.appVersion,
-    isDevelopment: config.isDevelopment,
-    isProduction: config.isProduction,
-    supabaseUrl: config.supabaseUrl,
-    hasSupabaseConfig: !!config.supabaseUrl && !!config.supabaseAnonKey,
-  };
+// Helper functions
+export const getServerUrl = (): string => {
+  return config.server.url;
 };
 
-// Validate configuration
-export const validateConfig = () => {
-  const errors: string[] = [];
-  
-  if (!config.supabaseUrl) {
-    errors.push('VITE_SUPABASE_URL is not configured');
-  }
-  
-  if (!config.supabaseAnonKey) {
-    errors.push('VITE_SUPABASE_ANON_KEY is not configured');
-  }
-  
-  if (errors.length > 0) {
-    console.error('❌ Configuration errors:', errors);
+export const getSupabaseUrl = (): string => {
+  return config.supabase.url;
+};
+
+export const getSupabaseKey = (): string => {
+  return config.supabase.anonKey;
+};
+
+export const isDebugMode = (): boolean => {
+  return config.features.debugMode;
+};
+
+export const isOfflineMode = (): boolean => {
+  return config.features.offlineMode;
+};
+
+export const shouldUseSocketIO = (): boolean => {
+  return config.features.enableSocketIO;
+};
+
+export const shouldUseSupabase = (): boolean => {
+  return config.features.enableSupabase;
+};
+
+// Test backend availability
+export const testBackendAvailability = async (): Promise<boolean> => {
+  try {
+    const response = await fetch(`${config.server.url}/health`, {
+      method: 'GET',
+      mode: 'cors',
+    });
+    return response.ok;
+  } catch (error) {
+    console.warn('Backend health check failed:', error);
     return false;
   }
-  
-  console.log('✅ Configuration validated successfully');
-  return true;
 };
+
+// Debug configuration
+if (isDebugMode()) {
+  console.log('🔧 Config debug:', config);
+}

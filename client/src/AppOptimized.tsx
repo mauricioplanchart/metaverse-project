@@ -11,7 +11,7 @@ const APP_VERSION = '2.1.0';
 const BUILD_TIMESTAMP = new Date().toISOString();
 
 console.log(`🚀 Enhanced Metaverse v${APP_VERSION} loaded at ${BUILD_TIMESTAMP}`);
-console.log('🚫 Socket.IO completely removed - Supabase only mode');
+console.log('✅ Supabase only mode enabled');
 console.log('🎮 Enhanced Avatar System with PBR materials and advanced animations');
 
 const AppOptimized: React.FC = () => {

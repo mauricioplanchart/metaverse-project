@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Render Setup Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 300px;
+        }
+        .log {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Render Setup Test</h1>
+        
+        <div class="status info" id="status">
+            Ready to test Render deployment
+        </div>
+        
+        <h3>📋 Deployment Checklist</h3>
+        <ul>
+            <li>✅ Server code available in ../server/</li>
+            <li>✅ Socket.IO client configured</li>
+            <li>✅ Environment variables ready</li>
+            <li>✅ Build system working</li>
+        </ul>
+        
+        <h3>🔧 Next Steps</h3>
+        <ol>
+            <li><strong>Deploy Server to Render:</strong>
+                <ul>
+                    <li>Go to <a href="https://dashboard.render.com" target="_blank">Render Dashboard</a></li>
+                    <li>Create new Web Service</li>
+                    <li>Set root directory to: <code>server</code></li>
+                    <li>Set build command: <code>npm install && npm run build</code></li>
+                    <li>Set start command: <code>npm start</code></li>
+                </ul>
+            </li>
+            <li><strong>Get Your Render URL</strong> (e.g., https://your-app.onrender.com)</li>
+            <li><strong>Update Environment:</strong>
+                <ul>
+                    <li>Replace <code>your-app.onrender.com</code> with your actual URL</li>
+                    <li>Update <code>.env.local</code> file</li>
+                </ul>
+            </li>
+            <li><strong>Test Connection:</strong>
+                <ul>
+                    <li>Use the test below</li>
+                    <li>Deploy client to Netlify or another platform</li>
+                </ul>
+            </li>
+        </ol>
+        
+        <div>
+            <label for="serverUrl">Test Server URL:</label>
+            <input type="text" id="serverUrl" placeholder="https://your-app.onrender.com" value="https://metaverse-project-2.onrender.com">
+            <button onclick="testConnection()">Test Connection</button>
+        </div>
+        
+        <h3>Connection Log:</h3>
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        const log = document.getElementById('log');
+        const status = document.getElementById('status');
+        
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            log.innerHTML += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+        
+        function updateStatus(message, type = 'info') {
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+        
+        async function testConnection() {
+            const serverUrl = document.getElementById('serverUrl').value;
+            if (!serverUrl) {
+                updateStatus('Please enter a server URL', 'error');
+                return;
+            }
+            
+            updateStatus('Testing connection...', 'info');
+            addLog(`Testing connection to: ${serverUrl}`);
+            
+            try {
+                const response = await fetch(`${serverUrl}/health`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    updateStatus('✅ Server is reachable!', 'success');
+                    addLog('✅ Health check passed');
+                    addLog('🎉 Ready for Render deployment!');
+                } else {
+                    updateStatus('❌ Server responded with error', 'error');
+                    addLog(`❌ Health check failed: ${response.status}`);
+                }
+            } catch (error) {
+                updateStatus('❌ Cannot reach server', 'error');
+                addLog(`❌ Connection error: ${error.message}`);
+                addLog('💡 Make sure your Render server is deployed and running');
+            }
+        }
+        
+        // Auto-test on page load
+        window.addEventListener('load', () => {
+            addLog('🚀 Render Setup Test loaded');
+            addLog('📋 Ready to deploy to Render');
+            addLog('🔧 Follow the checklist above');
+        });
+    </script>
+</body>
+</html> 

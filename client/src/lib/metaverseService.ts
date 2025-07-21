@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 
 // Supabase-based metaverse service for real-time multiplayer features
-// VERSION: 2.1.0 - Supabase Only (No Socket.IO)
+// VERSION: 2.2.0 - Supabase Only (Clean)
 class MetaverseService {
   private channel: any = null
   private listeners: Map<string, ((...args: any[]) => void)[]> = new Map()
@@ -10,92 +10,104 @@ class MetaverseService {
   private currentUsername: string | null = null
 
   constructor() {
-    console.log('🎮 MetaverseService v2.1.0 initialized - Supabase Only Mode')
-    console.log('🔧 Force Supabase mode - Socket.IO completely disabled')
+    console.log('🎮 MetaverseService v2.2.0 initialized - Supabase Only Mode (Clean)')
+    console.log('🔧 Supabase mode enabled - NO Socket.IO dependencies')
+    console.log('🔧 Config debug:', {
+      supabaseUrl: import.meta.env.VITE_SUPABASE_URL,
+      hasSupabase: !!supabase,
+      environment: import.meta.env.VITE_ENVIRONMENT || 'development'
+    })
   }
 
-  // Connect to Supabase real-time ONLY
+  // Get connection status
+  get connected(): boolean {
+    return this.isConnected
+  }
+
+  // Get current user ID
+  get id(): string | null {
+    return this.currentUserId
+  }
+
+  // Get current user
+  get currentUser(): any {
+    return {
+      id: this.currentUserId,
+      username: this.currentUsername
+    }
+  }
+
+  // Connect to Supabase real-time
   async connect(): Promise<boolean> {
     try {
-      console.log('🔌 Connecting to Supabase real-time (v2.1.0)...')
-      console.log('🚫 Socket.IO connections are completely disabled')
+      console.log('✅ Supabase connections enabled - NO Socket.IO')
       
-      // Force Supabase connection only
-      if (!supabase) {
-        console.error('❌ Supabase client not available')
-        return false
-      }
-      
-      this.channel = supabase.channel('metaverse-v2')
+      // Initialize Supabase real-time connection
+      this.channel = supabase
+        .channel('metaverse')
         .on('presence', { event: 'sync' }, () => {
-          console.log('✅ Supabase presence sync (v2.1.0)')
-          this.emit('presenceSync')
+          console.log('✅ Presence sync received')
         })
         .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-          console.log('👤 User joined (v2.1.0):', key, newPresences)
-          this.emit('userJoined', { key, presences: newPresences })
+          console.log('✅ User joined:', key, newPresences)
+          this.emit('userJoined', { userId: key, user: newPresences[0] })
         })
         .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
-          console.log('👋 User left (v2.1.0):', key, leftPresences)
-          this.emit('userLeft', { key, presences: leftPresences })
+          console.log('✅ User left:', key, leftPresences)
+          this.emit('userLeft', { userId: key, user: leftPresences[0] })
         })
-        .on('broadcast', { event: 'avatar_update' }, (payload) => {
-          console.log('🎮 Avatar update received (v2.1.0):', payload)
-          this.emit('avatarUpdate', payload)
-        })
-        .on('broadcast', { event: 'chat_message' }, (payload) => {
-          console.log('💬 Chat message received (v2.1.0):', payload)
-          this.emit('chatMessage', payload)
-        })
-        .on('broadcast', { event: 'world_event' }, (payload) => {
-          console.log('🌍 World event received (v2.1.0):', payload)
-          this.emit('worldEvent', payload)
-        })
-        .subscribe((status) => {
-          console.log('📡 Supabase subscription status (v2.1.0):', status)
+        .subscribe(async (status) => {
+          console.log('✅ Supabase real-time status:', status)
           if (status === 'SUBSCRIBED') {
             this.isConnected = true
+            console.log('✅ Successfully connected to Supabase (v2.2.0) - NO Socket.IO')
             this.emit('connected')
-            console.log('✅ Successfully connected to Supabase (v2.1.0)')
-          } else if (status === 'CHANNEL_ERROR') {
+          } else if (status === 'CLOSED') {
             this.isConnected = false
-            this.emit('error', 'Supabase channel error')
-            console.error('❌ Supabase channel error (v2.1.0)')
+            console.log('❌ Supabase connection closed')
+            this.emit('disconnected')
           }
         })
 
       return true
     } catch (error) {
-      console.error('❌ Failed to connect to Supabase (v2.1.0):', error)
+      console.error('❌ Failed to connect to Supabase:', error)
       return false
     }
   }
 
   // Disconnect from Supabase
-  disconnect(): void {
+  async disconnect(): Promise<void> {
     if (this.channel) {
-      supabase.removeChannel(this.channel)
+      await supabase.removeChannel(this.channel)
       this.channel = null
+      this.isConnected = false
+      console.log('✅ Disconnected from Supabase')
     }
-    this.isConnected = false
-    this.emit('disconnected')
   }
 
   // Join a world
   async joinWorld(worldId: string, username: string): Promise<boolean> {
     try {
-      // this.currentWorld = worldId // Unused for now
+      if (!this.isConnected) {
+        console.log('❌ Not connected to Supabase')
+        return false
+      }
+
       this.currentUsername = username
       this.currentUserId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      
+
       // Track presence in the world
-      this.trackPresence(this.currentUserId, {
-        username,
-        world: worldId,
-        joined_at: new Date().toISOString()
+      await this.channel.track({
+        user_id: this.currentUserId,
+        username: username,
+        world_id: worldId,
+        position: { x: 0, y: 0, z: 0 },
+        timestamp: new Date().toISOString()
       })
 
-      this.emit('worldJoined', { worldId, username })
+      console.log('✅ Joined world via Supabase - NO Socket.IO')
+      this.emit('worldJoined', { worldId, username, userId: this.currentUserId })
       return true
     } catch (error) {
       console.error('❌ Failed to join world:', error)
@@ -103,148 +115,57 @@ class MetaverseService {
     }
   }
 
+  // Leave the current world
+  async leaveWorld(): Promise<void> {
+    if (this.channel && this.currentUserId) {
+      await this.channel.untrack()
+      this.currentUserId = null
+      this.currentUsername = null
+      console.log('✅ Left world via Supabase')
+      this.emit('worldLeft')
+    }
+  }
+
   // Update avatar position
-  updatePosition(position: any, rotation?: any): void {
-    if (!this.isConnected || !this.channel) {
-      console.warn('⚠️ Not connected, cannot update position')
-      return
+  async updatePosition(position: { x: number; y: number; z: number }, rotation?: { x: number; y: number; z: number }): Promise<void> {
+    if (this.channel && this.currentUserId) {
+      await this.channel.track({
+        user_id: this.currentUserId,
+        username: this.currentUsername,
+        position: position,
+        rotation: rotation || { x: 0, y: 0, z: 0 },
+        timestamp: new Date().toISOString()
+      })
     }
-
-    this.sendAvatarUpdate({
-      userId: this.currentUserId,
-      username: this.currentUsername,
-      position,
-      rotation,
-      timestamp: Date.now()
-    })
   }
 
-  // Send chat message
-  sendMessage(message: string, _type: string = 'global'): void {
-    if (!this.isConnected || !this.channel) {
-      console.warn('⚠️ Not connected, cannot send message')
-      return
+  // Send a message
+  async sendMessage(message: string, type: string = 'global'): Promise<void> {
+    if (this.channel) {
+      await this.channel.send({
+        type: 'broadcast',
+        event: 'chat_message',
+        payload: {
+          userId: this.currentUserId,
+          username: this.currentUsername,
+          message: message,
+          type: type,
+          timestamp: new Date().toISOString()
+        }
+      })
     }
-
-    this.sendChatMessage(message, this.currentUsername || 'Anonymous')
   }
 
-  // Start typing indicator
-  startTyping(): void {
-    if (!this.isConnected || !this.channel) return
-
-    this.channel.send({
-      type: 'broadcast',
-      event: 'typing_start',
-      payload: { userId: this.currentUserId, username: this.currentUsername }
-    })
-  }
-
-  // Stop typing indicator
-  stopTyping(): void {
-    if (!this.isConnected || !this.channel) return
-
-    this.channel.send({
-      type: 'broadcast',
-      event: 'typing_stop',
-      payload: { userId: this.currentUserId, username: this.currentUsername }
-    })
-  }
-
-  // React to a message
-  reactToMessage(messageId: string, reaction: string): void {
-    if (!this.isConnected || !this.channel) return
-
-    this.channel.send({
-      type: 'broadcast',
-      event: 'message_reaction',
-      payload: { messageId, reaction, userId: this.currentUserId, username: this.currentUsername }
-    })
-  }
-
-  // Interact with objects
-  interact(interactionId: string): void {
-    if (!this.isConnected || !this.channel) return
-
-    this.channel.send({
-      type: 'broadcast',
-      event: 'interaction',
-      payload: { interactionId, userId: this.currentUserId, username: this.currentUsername }
-    })
-  }
-
-  // Teleport to location
-  teleport(teleporterId: string): void {
-    if (!this.isConnected || !this.channel) return
-
-    this.channel.send({
-      type: 'broadcast',
-      event: 'teleport',
-      payload: { teleporterId, userId: this.currentUserId, username: this.currentUsername }
-    })
-  }
-
-  // Remove all event listeners
-  removeAllListeners(): void {
-    this.listeners.clear()
-  }
-
-  // Send avatar update
-  sendAvatarUpdate(avatarData: any): void {
-    if (!this.isConnected || !this.channel) {
-      console.warn('⚠️ Not connected, cannot send avatar update')
-      return
+  // Get current connection status
+  getConnectionStatus(): { isConnected: boolean; currentUserId: string | null; currentUsername: string | null } {
+    return {
+      isConnected: this.isConnected,
+      currentUserId: this.currentUserId,
+      currentUsername: this.currentUsername
     }
-
-    this.channel.send({
-      type: 'broadcast',
-      event: 'avatar_update',
-      payload: avatarData
-    })
   }
 
-  // Send chat message (internal method)
-  private sendChatMessage(message: string, username: string): void {
-    if (!this.isConnected || !this.channel) {
-      console.warn('⚠️ Not connected, cannot send chat message')
-      return
-    }
-
-    this.channel.send({
-      type: 'broadcast',
-      event: 'chat_message',
-      payload: { message, username, timestamp: Date.now() }
-    })
-  }
-
-  // Send world event
-  sendWorldEvent(eventType: string, data: any): void {
-    if (!this.isConnected || !this.channel) {
-      console.warn('⚠️ Not connected, cannot send world event')
-      return
-    }
-
-    this.channel.send({
-      type: 'broadcast',
-      event: 'world_event',
-      payload: { type: eventType, data, timestamp: Date.now() }
-    })
-  }
-
-  // Track user presence
-  trackPresence(userId: string, userData: any): void {
-    if (!this.isConnected || !this.channel) {
-      console.warn('⚠️ Not connected, cannot track presence')
-      return
-    }
-
-    this.channel.track({
-      user_id: userId,
-      ...userData
-    })
-  }
-
-  // Event listeners
+  // Event emitter methods
   on(event: string, callback: (...args: any[]) => void): void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, [])
@@ -252,13 +173,9 @@ class MetaverseService {
     this.listeners.get(event)!.push(callback)
   }
 
-  off(event: string, callback?: (...args: any[]) => void): void {
-    if (!this.listeners.has(event)) return
-
-    if (!callback) {
-      this.listeners.delete(event)
-    } else {
-      const callbacks = this.listeners.get(event)!
+  off(event: string, callback: (...args: any[]) => void): void {
+    const callbacks = this.listeners.get(event)
+    if (callbacks) {
       const index = callbacks.indexOf(callback)
       if (index > -1) {
         callbacks.splice(index, 1)
@@ -266,35 +183,108 @@ class MetaverseService {
     }
   }
 
+  // Remove all listeners
+  removeAllListeners(): void {
+    this.listeners.clear()
+  }
+
   private emit(event: string, ...args: any[]): void {
-    if (this.listeners.has(event)) {
-      this.listeners.get(event)!.forEach(callback => {
-        try {
-          callback(...args)
-        } catch (error) {
-          console.error('❌ Error in event listener:', error)
-        }
-      })
+    const callbacks = this.listeners.get(event)
+    if (callbacks) {
+      callbacks.forEach(callback => callback(...args))
     }
   }
 
-  // Getters
-  get connected(): boolean {
-    return this.isConnected
+  // Get all users in the current world
+  async getUsers(): Promise<any[]> {
+    if (this.channel) {
+      const presence = await this.channel.presenceState()
+      return Object.values(presence).flat()
+    }
+    return []
   }
 
-  get id(): string | null {
-    return this.currentUserId
-  }
-
-  get currentUser(): { username: string | null; userId: string | null } | null {
-    if (!this.currentUserId || !this.currentUsername) return null
-    return {
+  // Interaction methods (for compatibility)
+  interact(interactionId: string): void {
+    if (!this.isConnected) {
+      console.warn('⚠️ Not connected to Supabase')
+      return
+    }
+    
+    const interactionData = {
+      user_id: this.currentUserId,
       username: this.currentUsername,
-      userId: this.currentUserId
+      interaction_id: interactionId,
+      timestamp: new Date().toISOString()
     }
+    
+    this.channel?.send({
+      type: 'broadcast',
+      event: 'interaction',
+      payload: interactionData
+    })
+    
+    console.log('🎯 Interaction sent via Supabase:', interactionData)
+  }
+
+  // Typing indicators
+  startTyping(): void {
+    if (!this.isConnected) return
+    
+    this.channel?.send({
+      type: 'broadcast',
+      event: 'typing_start',
+      payload: { 
+        user_id: this.currentUserId, 
+        username: this.currentUsername 
+      }
+    })
+  }
+
+  stopTyping(): void {
+    if (!this.isConnected) return
+    
+    this.channel?.send({
+      type: 'broadcast',
+      event: 'typing_stop',
+      payload: { 
+        user_id: this.currentUserId, 
+        username: this.currentUsername 
+      }
+    })
+  }
+
+  // Message reactions
+  reactToMessage(messageId: string, reaction: string): void {
+    if (!this.isConnected) return
+    
+    this.channel?.send({
+      type: 'broadcast',
+      event: 'message_reaction',
+      payload: { 
+        message_id: messageId, 
+        reaction, 
+        user_id: this.currentUserId, 
+        username: this.currentUsername 
+      }
+    })
+  }
+
+  // Teleport
+  teleport(teleporterId: string): void {
+    if (!this.isConnected) return
+    
+    this.channel?.send({
+      type: 'broadcast',
+      event: 'teleport',
+      payload: { 
+        teleporter_id: teleporterId, 
+        user_id: this.currentUserId, 
+        username: this.currentUsername 
+      }
+    })
   }
 }
 
-// Create singleton instance
+// Export singleton instance
 export const metaverseService = new MetaverseService() 
